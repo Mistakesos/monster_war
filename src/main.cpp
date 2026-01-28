@@ -1,53 +1,113 @@
-#include "entt/entt.hpp"
+#include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/Graphics/CircleShape.hpp>
+#include <SFML/Graphics/Texture.hpp>
+#include <SFML/Graphics/Sprite.hpp>
 #include <spdlog/spdlog.h>
+#include "imgui_sfml/imgui-SFML.h"
+#include "imgui/imgui.h"
 
-// 组件是一些简单的结构体或类，他们只包含数据
-// 定义两个组件：位置和速度
-struct Position {
-    float x, y;
-};
+void imgui_optional_settings() {
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
-struct Velocity {
-    float dx, dy;
-};
+    // 设置 ImGui 主题
+    ImGui::StyleColorsDark();
+    // ImGui::StyleColorsLight();
 
-struct Tag {
-    entt::hashed_string value;
-};
+    // 设置缩放
+    float main_scale = 1.f;     // 或者直接设置更加稳定
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.ScaleAllSizes(main_scale);        // 固定样式缩放比例。
+    io.FontGlobalScale = main_scale;        // 设置初始字体缩放比例。
 
-int main() {
-    using namespace entt::literals;
+    // 设置透明度
+    float window_alpha = 0.5f;
+
+    // 修改各个UI元素的透明度
+    style.Colors[ImGuiCol_WindowBg].w = window_alpha;
+    style.Colors[ImGuiCol_PopupBg].w = window_alpha;
+
+    // 为了正确显示中文，我们需要加载支持中文的字体。
+    ImFont* font = io.Fonts->AddFontFromFileTTF(
+        "assets/fonts/NotoSansSC-Medium.ttf",   // 字体文件路径
+        // "assets/fonts/VonwaonBitmap-16px.ttf",
+        36.f,                                   // 字体大小
+        nullptr,                                // 字体配置参数
+        io.Fonts->GetGlyphRangesChineseFull() // 字符范围
+    );
+    if (!font) {
+        // 如果字体加载失败，回退到默认字体，但中文将无法显示。
+        io.Fonts->AddFontDefault();
+        spdlog::warn("警告：无法加载中文字体，中文字符将无法正确显示。");
+    }
+
+    io.FontDefault = font;  // 设置为全局默认字体
+
+    if (!ImGui::SFML::UpdateFontTexture()) {
+        spdlog::error("错误：字体更新失败！");
+    }
+}
+
+void imgui_window_1() {
+    static float volume_value = 0.5f;
     
-    entt::registry registry;
+    ImGui::Begin("窗口1");
+    ImGui::Text("这是第一个窗口");
+    ImGui::SetWindowFontScale(1.5f);
+    if (ImGui::Button("按钮1", sf::Vector2i(200, 60))) {
+        spdlog::info("按钮1被点击");
+    }
+    ImGui::SetWindowFontScale(1.f);
+    if (ImGui::SliderFloat("音量", &volume_value, 0.f, 1.f)) {
+        spdlog::info("音量被调整：{}", volume_value);
+    }
+    ImGui::End();
+}
 
-    entt::entity player = registry.create();
-    registry.emplace<Position>(player, 10.f, 20.f);
-    registry.emplace<Velocity>(player, 1.f, 0.5f);
+auto texture = sf::Texture("assets/textures/Buildings/Castle.png");
+void imgui_window_2() {
+    ImGui::Begin("窗口2");
     
-    entt::entity enemy = registry.create();
-    registry.emplace<Position>(enemy, 100.f, 50.f);
-    registry.emplace<Velocity>(enemy, -0.5f, -1.f);
+    ImGui::Image(texture);
+    
+    ImGui::End();
+}
 
-    registry.emplace<Tag>(player, "player"_hs);
-    registry.emplace<Tag>(enemy, "enemy"_hs);
+int main(int, char**) {
+    // sfml
+    sf::RenderWindow window(sf::VideoMode({1280u, 720u}), "Testing Window");
 
-    spdlog::info("=== 使用哈希字符串标签 ===");
+    // imgui init
+    if (!ImGui::SFML::Init(window)) {
+        spdlog::critical("ImGui 未正确初始化！");
+    }
+    imgui_optional_settings();
 
-    auto view = registry.view<const Tag, const Position>();
+    sf::Clock delta_clock;
+    sf::CircleShape circle(30.f);
+    while (window.isOpen()) {
+        while (std::optional event = window.pollEvent()) {
+            ImGui::SFML::ProcessEvent(window, event.value());
 
-    view.each([](const auto& entity_tag, const auto& pos) {
-        if (entity_tag.value == "player"_hs) {
-            spdlog::info("找到玩家，位置：({}, {})", pos.x, pos.y);
+            if (event->is<sf::Event::Closed>()) {
+                window.close();
+            }
         }
 
-        if (entity_tag.value == "enemy"_hs) {
-            spdlog::info("找到敌人，位置：({}, {})", pos.x, pos.y);
-        }
-    });
-    
-    auto player_tag = registry.get<Tag>(player);
-    spdlog::info("玩家标签的哈希值：{}", player_tag.value.value());
-    spdlog::info("玩家标签的原始文本：{}", player_tag.value.data());
+        ImGui::SFML::Update(window, delta_clock.restart());
+
+        // ImGui::ShowDemoWindow();
+        imgui_window_1();
+        imgui_window_2();
+
+        window.clear();
+        window.draw(circle);
+        ImGui::SFML::Render(window);
+        window.display();
+    }
+
+    ImGui::SFML::Shutdown();
     
     return 0;
 }
