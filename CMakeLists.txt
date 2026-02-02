@@ -32,6 +32,22 @@ file(GLOB_RECURSE SRC_LIST CMAKE_CONFIGURE_DEPENDS
     ${PROJECT_SOURCE_DIR}/src/*.cpp
     ${PROJECT_SOURCE_DIR}/src/thirdparty/imgui/*.cpp
     ${PROJECT_SOURCE_DIR}/src/thirdparty/imgui_sfml/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/engine/core/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/engine/resource/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/engine/render/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/engine/input/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/engine/component/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/engine/object/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/engine/scene/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/engine/audio/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/engine/ui/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/engine/ui/state/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/game/scene/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/game/data/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/game/component/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/game/component/state/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/game/component/ai/*.cpp
+
 )
 
 # 生成可执行文件，这里的所有cpp文件用变量替代
