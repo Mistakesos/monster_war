@@ -9,19 +9,27 @@ InputManager::InputManager(sf::RenderWindow* window, const engine::core::Config*
     : window_obs_{window}
     , action_to_input_copy_{config->action_to_input_} {
     for (const auto& [action, inputs] : action_to_input_copy_) {
-        action_state_map_.emplace(action, ActionState::Inactive);
+        action_states_.emplace(action, ActionState::Inactive);
     }
 }
 
+entt::sink<entt::sigh<void()>> InputManager::on_action(Action action_name, ActionState action_state) {
+    // 如果 action_name 不存在，自动创建一个 std::array<...>
+    // .at() 会进行边界检查，更安全
+    return actions_to_func_[action_name].at(static_cast<size_t>(action_state));
+}
+
 void InputManager::update() {
-    for (auto& [action, state] : action_state_map_) {
-        if (state == ActionState::PressedThisFrame) {
-            state = ActionState::HeldDown;
-        } else if (state == ActionState::ReleasedThisFrame) {
+    // 根据上一帧的状态更新状态
+    for (auto& [action, state] : action_states_) {
+        if (state == ActionState::Pressed) {
+            state = ActionState::Held;
+        } else if (state == ActionState::Released) {
             state = ActionState::Inactive;
         }
     }
 
+    // 处理按键是否按下，并决定是否更改状态
     for (auto& [action, inputs] : action_to_input_copy_) {
         bool pressed = false;
 
@@ -43,38 +51,48 @@ void InputManager::update() {
             if (pressed) break;
         }
 
-        ActionState prev = action_state_map_.at(action);
+        ActionState prev = action_states_[action];
         if (pressed) {
-            if (prev == ActionState::Inactive || prev == ActionState::ReleasedThisFrame)
-                action_state_map_.at(action) = ActionState::PressedThisFrame;
+            if (prev == ActionState::Inactive || prev == ActionState::Released)
+                action_states_[action] = ActionState::Pressed;
             else
-                action_state_map_.at(action) = ActionState::HeldDown;
+                action_states_[action] = ActionState::Held;
         } else {
-            if (prev == ActionState::HeldDown || prev == ActionState::PressedThisFrame)
-                action_state_map_.at(action) = ActionState::ReleasedThisFrame;
+            if (prev == ActionState::Held || prev == ActionState::Pressed)
+                action_states_[action] = ActionState::Released;
             else
-                action_state_map_.at(action) = ActionState::Inactive;
+                action_states_[action] = ActionState::Inactive;
+        }
+    }
+
+    // 触发回调
+    for (const auto& [action_name, state] : action_states_) {
+        if (state != ActionState::Inactive) {   // 如果动作状态不是 Inactive
+            // 且有绑定回调函数
+            if (auto it = actions_to_func_.find(action_name); it != actions_to_func_.end()) {
+                it->second.at(static_cast<size_t>(state)).publish();    // 触发回调
+            }
         }
     }
 }
 
 bool InputManager::is_action_held(Action action) const {
-    if (auto it = action_state_map_.find(action); it != action_state_map_.end()) {
-        return it->second == ActionState::PressedThisFrame || it->second == ActionState::HeldDown;
+    if (auto it = action_states_.find(action); it != action_states_.end()) {
+        return it->second == ActionState::Pressed || it->second == ActionState::Held;
     }
     return false;
 }
 
 bool InputManager::is_action_pressed(Action action) const {
-    if (auto it = action_state_map_.find(action); it != action_state_map_.end()) {
-        return it->second == ActionState::PressedThisFrame;
+    if (auto it = action_states_.find(action); it != action_states_.end()) {
+        return it->second == ActionState::Pressed;
     }
     return false;
 }
 
 bool InputManager::is_action_released(Action action) const {
-    if (auto it = action_state_map_.find(action); it != action_state_map_.end()) {
-        return it->second == ActionState::ReleasedThisFrame;
+    if (auto it = action_states_.find(action); it != action_states_.end()) {
+        return it->second == ActionState::Released;
     }
     return false;
 }

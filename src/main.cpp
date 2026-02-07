@@ -4,7 +4,7 @@
 #include <spdlog/spdlog.h>
 
 int main(int, char*[]) {
-    spdlog::set_level(spdlog::level::off);
+    spdlog::set_level(spdlog::level::info);
     
     engine::core::Game game;
     game.register_scene_setup([](engine::scene::SceneManager& scene_manager) {

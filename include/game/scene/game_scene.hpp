@@ -1,8 +1,5 @@
 #pragma once
 #include "engine/scene/scene.hpp"
-#include <SFML/System/Time.hpp>
-#include <SFML/System/Vector2.hpp>
-#include <memory>
 
 namespace game::scene {
 /**
@@ -14,6 +11,11 @@ public:
               engine::scene::SceneManager& scene_manager
     );
     
-    ~GameScene() = default;
+    ~GameScene();
+
+private:
+    // --- 测试输入回调事件 ---
+    void on_attack();
+    void on_jump();
 };
 }
