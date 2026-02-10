@@ -1,4 +1,5 @@
 #pragma once
+#include "engine/utils/events.hpp"
 #include <SFML/System/Time.hpp>
 #include <memory>
 #include <string>
@@ -28,11 +29,6 @@ public:
     SceneManager(SceneManager&&) = delete;
     SceneManager& operator=(SceneManager&&) = delete;
 
-    // 延迟切换场景
-    void request_push_scene(std::unique_ptr<Scene>&& scene);      ///< @brief 请求压入一个新场景。
-    void request_pop_scene();                                     ///< @brief 请求弹出当前场景。
-    void request_replace_scene(std::unique_ptr<Scene>&& scene);   ///< @brief 请求替换当前场景。
-
     // getters
     Scene* get_current_scene() const;                                 ///< @brief 获取当前活动场景（栈顶场景）的指针。
     engine::core::Context& get_context() const;                       ///< @brief 获取引擎上下文引用。
@@ -43,6 +39,11 @@ public:
     void handle_input();
 
 private:
+    // 事件回调函数
+    void on_pop_scene();
+    void on_push_scene(engine::utils::PushSceneEvent& event);
+    void on_replace_scene(engine::utils::ReplaceSceneEvent& event);
+
     void process_pending_actions();                         ///< @brief 处理挂起的场景操作（每轮更新最后调用）。
     // 直接切换场景
     void push_scene(std::unique_ptr<Scene>&& scene);        ///< @brief 将一个新场景压入栈顶，使其成为活动场景。

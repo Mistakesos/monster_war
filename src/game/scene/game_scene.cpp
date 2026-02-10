@@ -7,29 +7,46 @@
 #include <spdlog/spdlog.h>
 
 namespace game::scene {
-GameScene::GameScene(engine::core::Context& context, engine::scene::SceneManager& scene_manager)
-    : Scene{"GameScene", context, scene_manager} {
+GameScene::GameScene(engine::core::Context& context)
+    : Scene{"GameScene", context} {
+    static int count = 0;
+    scene_index_ = count++;
+    spdlog::info("场景编号：{}", scene_index_);
+    
     // 注册输入回调事件 (J,K 键)
     auto& input_manager = context_.get_input_manager();
-    input_manager.on_action(Action::Attack).connect<&GameScene::on_attack>(this);
-    input_manager.on_action(Action::Jump, engine::input::ActionState::Released).connect<&GameScene::on_jump>(this);
+    input_manager.on_action(Action::Jump).connect<&GameScene::on_replace>(this);     // J 键
+    input_manager.on_action(Action::MouseLeft).connect<&GameScene::on_push>(this);   // 鼠标左键
+    input_manager.on_action(Action::MouseRight).connect<&GameScene::on_pop>(this);   // 鼠标右键
+    input_manager.on_action(Action::Pause).connect<&GameScene::on_quit>(this);        // P 键
 }
 
 GameScene::~GameScene() {
     // 断开输入回调事件 (谁连接，谁负责断开)
     auto& input_manager = context_.get_input_manager();
-    input_manager.on_action(Action::Attack).disconnect<&GameScene::on_attack>(this);
-    input_manager.on_action(Action::Jump, engine::input::ActionState::Released).disconnect<&GameScene::on_jump>(this);
+    input_manager.on_action(Action::Jump).disconnect<&GameScene::on_replace>(this);    // J 键
+    input_manager.on_action(Action::MouseLeft).disconnect<&GameScene::on_push>(this);  // 鼠标左键
+    input_manager.on_action(Action::MouseRight).disconnect<&GameScene::on_pop>(this);  // 鼠标右键
+    input_manager.on_action(Action::Pause).disconnect<&GameScene::on_quit>(this);       // P 键
 }
 
-void GameScene::on_attack() {
-    spdlog::info("On attack");
-
-    // 按攻击键发送“退出游戏”信号
-    context_.get_dispatcher().enqueue<engine::utils::QuitEvent>();
+void GameScene::on_replace() {
+    spdlog::info("on_replace, 切换场景");
+    request_replace_scene(std::make_unique<game::scene::GameScene>(context_));
 }
 
-void GameScene::on_jump() {
-    spdlog::info("On jump");
+void GameScene::on_push() {
+    spdlog::info("on_push, 压入场景");
+    request_push_scene(std::make_unique<game::scene::GameScene>(context_));
+}
+
+void GameScene::on_pop() {
+    spdlog::info("on_pop, 弹出编号为 {} 的场景", scene_index_);
+    request_pop_scene();
+}
+
+void GameScene::on_quit() {
+    spdlog::info("on_quit, 退出游戏");
+    quit();
 }
 } // namespace game::scene

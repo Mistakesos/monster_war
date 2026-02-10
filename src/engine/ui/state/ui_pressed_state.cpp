@@ -18,7 +18,7 @@ UIPressedState::UIPressedState(engine::ui::UIInteractive* owner)
 void UIPressedState::handle_input(engine::core::Context& context) {
     auto& input_manager = context.get_input_manager();
     auto mouse_pos = input_manager.get_mouse_logical_position();
-    if (input_manager.is_action_released(Action::MouseLeftClick)) {
+    if (input_manager.is_action_released(Action::MouseLeft)) {
         if (!owner_->is_point_inside(static_cast<sf::Vector2f>(mouse_pos))) { // 松开鼠标时，如果不在UI元素内，则切换到正常状态
             transition<engine::ui::state::UINormalState>();
         } else { // 松开鼠标时，如果还在UI元素内，则触发点击事件

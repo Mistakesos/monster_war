@@ -53,7 +53,7 @@ Game::~Game() {
 
 void Game::run() {
     // 调用场景设置函数(创建第一个场景并压入栈)
-    scene_setup_func_(*scene_manager_);
+    scene_setup_func_(*context_);
 
     time_->set_target_fps(config_->target_fps_);
 
@@ -77,7 +77,7 @@ void Game::run() {
     }
 }
 
-void Game::register_scene_setup(std::function<void(engine::scene::SceneManager&)> func) {
+void Game::register_scene_setup(std::function<void(engine::core::Context&)> func) {
     scene_setup_func_ = std::move(func);
     spdlog::trace("已注册场景设置函数");
 }

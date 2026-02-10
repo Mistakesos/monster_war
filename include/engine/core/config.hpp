@@ -61,8 +61,8 @@ public:
         {Action::Pause, {Scancode::P, Scancode::Escape}}
     };
     std::unordered_map<Action, std::vector<Button>> mouse_input_mappings_ = {
-        {Action::MouseLeftClick, {Button::Left}},
-        {Action::MouseRightClick, {Button::Right}},
+        {Action::MouseLeft, {Button::Left}},
+        {Action::MouseRight, {Button::Right}},
         {Action::Attack, {Button::Left}}
     };
     std::unordered_map<Action, std::vector<std::variant<Scancode, Button>>> action_to_input_;

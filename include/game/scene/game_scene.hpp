@@ -7,15 +7,16 @@ namespace game::scene {
  */
 class GameScene final : public engine::scene::Scene {
 public:
-    GameScene(engine::core::Context& context,
-              engine::scene::SceneManager& scene_manager
-    );
+    GameScene(engine::core::Context& context);
     
     ~GameScene();
 
 private:
-    // --- 测试输入回调事件 ---
-    void on_attack();
-    void on_jump();
+    // --- 测试回调事件 ---
+    int scene_index_ = 0;
+    void on_replace();
+    void on_push();
+    void on_pop();
+    void on_quit();
 };
 }

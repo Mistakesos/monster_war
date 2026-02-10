@@ -1,30 +1,21 @@
 #include "engine/scene/scene_manager.hpp"
 #include "engine/core/context.hpp"
 #include "engine/scene/scene.hpp"
+#include "entt/signal/dispatcher.hpp"
 #include <spdlog/spdlog.h>
 
 namespace engine::scene {
 SceneManager::SceneManager(engine::core::Context& context)
     : context_{context} {
+    context_.get_dispatcher().sink<engine::utils::PopSceneEvent>().connect<&SceneManager::on_pop_scene>(this);
+    context_.get_dispatcher().sink<engine::utils::PushSceneEvent>().connect<&SceneManager::on_push_scene>(this);
+    context_.get_dispatcher().sink<engine::utils::ReplaceSceneEvent>().connect<&SceneManager::on_replace_scene>(this);
     spdlog::trace("场景管理器已创建");
 }
 
 SceneManager::~SceneManager() {
+    context_.get_dispatcher().disconnect(this);
     spdlog::trace("场景管理器已销毁");
-}
-
-void SceneManager::request_push_scene(std::unique_ptr<Scene>&& scene) {
-    pending_action_ = PendingAction::Push;
-    pending_scene_ = std::move(scene);
-}
-
-void SceneManager::request_pop_scene() {
-    pending_action_ = PendingAction::Pop;
-}
-
-void SceneManager::request_replace_scene(std::unique_ptr<Scene>&& scene) {
-    pending_action_ = PendingAction::Replace;
-    pending_scene_ = std::move(scene);
 }
 
 Scene* SceneManager::get_current_scene() const {
@@ -63,6 +54,20 @@ void SceneManager::handle_input() {
     if (current_scene) {
         current_scene->handle_input();
     }
+}
+
+void SceneManager::on_pop_scene() {
+    pending_action_ = PendingAction::Pop;
+}
+
+void SceneManager::on_push_scene(engine::utils::PushSceneEvent& event) {
+    pending_action_ = PendingAction::Push;
+    pending_scene_ = std::move(event.scene);
+}
+
+void SceneManager::on_replace_scene(engine::utils::ReplaceSceneEvent& event) {
+    pending_action_ = PendingAction::Replace;
+    pending_scene_ = std::move(event.scene);
 }
 
 void SceneManager::process_pending_actions() {
@@ -107,6 +112,12 @@ void SceneManager::pop_scene() {
 
     // 清理并移除栈顶场景
     scene_stack_.pop_back();
+
+    // 如果弹出最后一个场景，退出游戏
+    if (scene_stack_.empty()) {
+        spdlog::warn("弹出最后一个场景，退出游戏");
+        context_.get_dispatcher().enqueue<engine::utils::QuitEvent>();
+    }
 }
 
 void SceneManager::replace_scene(std::unique_ptr<Scene>&& scene) {

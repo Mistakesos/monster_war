@@ -20,7 +20,7 @@ void UIHoverState::handle_input(engine::core::Context& context)
     if (!owner_->is_point_inside(static_cast<sf::Vector2f>(mouse_pos))) {                // 如果鼠标不在UI元素内，则返回正常状态
         transition<UINormalState>();
     }
-    if (input_manager.is_action_pressed(Action::MouseLeftClick)) {  // 如果鼠标按下，则返回按下状态
+    if (input_manager.is_action_pressed(Action::MouseLeft)) {  // 如果鼠标按下，则返回按下状态
         transition<UIPressedState>();
     }
 }

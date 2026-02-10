@@ -9,6 +9,6 @@ enum class Action {
     Jump,
     Attack,
     Pause,
-    MouseLeftClick,
-    MouseRightClick
+    MouseLeft,
+    MouseRight
 };
