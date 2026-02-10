@@ -1,4 +1,5 @@
 #pragma once
+#include "entt/signal/fwd.hpp"
 
 // 前置声明核心系统
 namespace engine::input {
@@ -35,7 +36,8 @@ public:
      * @param camera 对 Camera 实例的引用。
      * @param resource_manager 对 ResourceManager 实例的引用。
      */
-    Context(engine::input::InputManager& input_manager
+    Context(entt::dispatcher& dispatcher
+          , engine::input::InputManager& input_manager
           , engine::render::Renderer& renderer
           , engine::render::Camera& camera
           , engine::resource::ResourceManager& resource_manager
@@ -50,6 +52,7 @@ public:
     Context& operator=(Context&&) = delete;
 
     // --- Getters ---
+    entt::dispatcher& get_dispatcher() const { return dispatcher_; }
     engine::input::InputManager& get_input_manager() const { return input_manager_; }            ///< @brief 获取输入管理器
     engine::render::Renderer& get_renderer() const { return renderer_; }                         ///< @brief 获取渲染器
     engine::render::Camera& get_camera() const { return camera_; }                               ///< @brief 获取相机
@@ -58,6 +61,7 @@ public:
     engine::core::GameState& get_game_state() const { return game_state_; }                      ///< @brief 获取游戏状态
 
 private:
+    entt::dispatcher& dispatcher_;                              ///< @brief 事件分发器
     engine::input::InputManager& input_manager_;                ///< @brief 输入管理器
     engine::render::Renderer& renderer_;                        ///< @brief 渲染器
     engine::render::Camera& camera_;                            ///< @brief 相机

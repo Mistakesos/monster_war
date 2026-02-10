@@ -5,16 +5,19 @@
 #include "engine/resource/resource_manager.hpp"
 #include "engine/audio/audio_player.hpp"
 #include "engine/core/game_state.hpp"
+#include "entt/signal/dispatcher.hpp"
 #include <spdlog/spdlog.h>
 
 namespace engine::core {
-Context::Context(engine::input::InputManager& input_manager
+Context::Context(entt::dispatcher& dispatcher
+               , engine::input::InputManager& input_manager
                , engine::render::Renderer& renderer
                , engine::render::Camera& camera
                , engine::resource::ResourceManager& resource_manager
                , engine::audio::AudioPlayer& audio_player
                , engine::core::GameState& game_state)
-    : input_manager_{input_manager}
+    : dispatcher_{dispatcher}
+    , input_manager_{input_manager}
     , renderer_{renderer}
     , camera_{camera}
     , resource_manager_{resource_manager}

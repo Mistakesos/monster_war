@@ -4,6 +4,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <SFML/Window/Event.hpp>
 #include <unordered_map>
 #include <vector>
 #include <variant>
@@ -36,9 +37,7 @@ public:
      * @return 一个 sink 对象，用于注册回调函数
      */
     entt::sink<entt::sigh<void()>> on_action(Action action_name, ActionState action_state = ActionState::Pressed);
-
-    void update();                                      ///< @brief 更新输入状态，每轮循环最先调用
-    
+       
     // 保留动作状态检查，提供不同的使用选择
     bool is_action_held(Action action) const;           ///< @brief 动作当前是否触发（持续按下或本帧按下）
     bool is_action_pressed(Action action) const;        ///< @brief 动作是否在本帧刚刚按下
@@ -50,10 +49,17 @@ public:
     sf::Vector2i get_mouse_position() const;            ///< @brief 获取鼠标位置（屏幕坐标）
     sf::Vector2i get_mouse_position_window() const;     ///< @brief 获取鼠标位置（窗口坐标）
     sf::Vector2i get_mouse_logical_position() const;    ///< @brief 获取鼠标逻辑坐标（窗口坐标，考虑 view 缩放）
-    
-    void process_event();
-    
+
+    void begin_frame();
+    void end_frame();
+    void handle_event(const sf::Event& event);
+
 private:
+    template <typename Input>
+    void update(Input input, bool pressed);
+
+    void toggle_fullscreen();
+
     sf::RenderWindow* window_obs_ = nullptr;        ///< @brief 用于传入获取鼠标的逻辑位置
     /**
      * @brief 核心数据结构：存储动作名称函数列表的映射
@@ -71,3 +77,6 @@ private:
     bool is_full_screen_ = false;        ///< @brief 是否全屏
 };
 } // namespace engine::input
+
+// template func
+#include "engine/input/input_manager.tpp"
