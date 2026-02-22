@@ -36,7 +36,7 @@ public:
      * @param action_state 动作状态，默认为按下瞬间
      * @return 一个 sink 对象，用于注册回调函数
      */
-    entt::sink<entt::sigh<void()>> on_action(Action action_name, ActionState action_state = ActionState::Pressed);
+    entt::sink<entt::sigh<bool()>> on_action(Action action_name, ActionState action_state = ActionState::Pressed);
        
     // 保留动作状态检查，提供不同的使用选择
     bool is_action_held(Action action) const;           ///< @brief 动作当前是否触发（持续按下或本帧按下）
@@ -67,7 +67,7 @@ private:
      * @note 每个动作有3个状态：Pressed、Held、Released，每个状态对应一个回调函数
      * @note 绑定动作时再插入元素（懒加载），初始化时为空
      */
-    std::unordered_map<Action, std::array<entt::sigh<void()>, 3>> actions_to_func_;
+    std::unordered_map<Action, std::array<entt::sigh<bool()>, 3>> actions_to_func_;
     using Scancode = sf::Keyboard::Scancode;
     using Button = sf::Mouse::Button;
     std::unordered_map<Action, std::vector<std::variant<Scancode, Button>>> action_to_input_copy_;     ///< @brief 动作到具体输入

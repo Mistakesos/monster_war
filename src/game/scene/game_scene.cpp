@@ -30,23 +30,27 @@ GameScene::~GameScene() {
     input_manager.on_action(Action::Pause).disconnect<&GameScene::on_quit>(this);       // P 键
 }
 
-void GameScene::on_replace() {
+bool GameScene::on_replace() {
     spdlog::info("on_replace, 切换场景");
     request_replace_scene(std::make_unique<game::scene::GameScene>(context_));
+    return true;
 }
 
-void GameScene::on_push() {
+bool GameScene::on_push() {
     spdlog::info("on_push, 压入场景");
     request_push_scene(std::make_unique<game::scene::GameScene>(context_));
+    return true;
 }
 
-void GameScene::on_pop() {
+bool GameScene::on_pop() {
     spdlog::info("on_pop, 弹出编号为 {} 的场景", scene_index_);
     request_pop_scene();
+    return true;
 }
 
-void GameScene::on_quit() {
+bool GameScene::on_quit() {
     spdlog::info("on_quit, 退出游戏");
     quit();
+    return true;
 }
 } // namespace game::scene

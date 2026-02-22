@@ -16,7 +16,7 @@ InputManager::InputManager(sf::RenderWindow* window, const engine::core::Config*
     }
 }
 
-entt::sink<entt::sigh<void()>> InputManager::on_action(Action action_name, ActionState action_state) {
+entt::sink<entt::sigh<bool()>> InputManager::on_action(Action action_name, ActionState action_state) {
     // 如果 action_name 不存在，自动创建一个 std::array<...>
     // .at() 会进行边界检查，更安全
     return actions_to_func_[action_name].at(static_cast<size_t>(action_state));
@@ -75,7 +75,12 @@ void InputManager::end_frame() {
     for (const auto& [action, state] : action_states_) {
         if (state != ActionState::Inactive) {
             if (auto it = actions_to_func_.find(action); it != actions_to_func_.end()) {
-                it->second.at(static_cast<size_t>(state)).publish();
+                // collect方法可以获取回调函数返回值，放入lambda函数的参数中。
+                // 而lambda函数的返回值为真时，停止分发信号。
+                // 分发信号的顺序为“后绑定先调用”
+                it->second.at(static_cast<size_t>(state)).collect([](bool result) {
+                    return result;
+                });
             }
         }
     }
