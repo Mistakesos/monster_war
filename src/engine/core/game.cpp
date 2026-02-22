@@ -23,7 +23,7 @@ Game::Game()
     , dispatcher_{std::make_unique<entt::dispatcher>()}
     , time_{std::make_unique<Time>()}
     , resource_manager_{std::make_unique<engine::resource::ResourceManager>()}
-    , input_manager_{std::make_unique<engine::input::InputManager>(window_.get(), config_.get())}
+    , input_manager_{std::make_unique<engine::input::InputManager>(window_.get(), config_.get(), dispatcher_.get())}
     , renderer_{std::make_unique<engine::render::Renderer>(window_.get(), resource_manager_.get())}
     , camera_{std::make_unique<engine::render::Camera>(window_.get())}
     , audio_player_{std::make_unique<engine::audio::AudioPlayer>(resource_manager_.get())}
@@ -85,11 +85,6 @@ void Game::register_scene_setup(std::function<void(engine::core::Context&)> func
 void Game::handle_event() {
     while (std::optional event = window_->pollEvent()) {
         input_manager_->handle_event(*event);
-    }
-
-    if (input_manager_->should_quit()) {
-        spdlog::trace("Game 收到来自 InputManager 的退出请求。");
-        window_->close();
     }
 
     scene_manager_->handle_input();

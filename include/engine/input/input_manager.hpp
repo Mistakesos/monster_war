@@ -1,6 +1,7 @@
 #pragma once
 #include "engine/utils/action.hpp"
 #include "entt/signal/sigh.hpp"
+#include "entt/signal/fwd.hpp"
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
 #include <SFML/System/Vector2.hpp>
@@ -27,7 +28,7 @@ enum class ActionState {
 
 class InputManager final {
 public:
-    InputManager(sf::RenderWindow* window, const engine::core::Config* config);
+    InputManager(sf::RenderWindow* window, const engine::core::Config* config, entt::dispatcher* dispatcher);
     ~InputManager() = default;
     
     /**
@@ -42,9 +43,6 @@ public:
     bool is_action_held(Action action) const;           ///< @brief 动作当前是否触发（持续按下或本帧按下）
     bool is_action_pressed(Action action) const;        ///< @brief 动作是否在本帧刚刚按下
     bool is_action_released(Action action) const;       ///< @brief 动作是否在本帧刚刚释放
-
-    bool should_quit() const { return should_quit_; }   ///< @brief 查询退出状态
-    void set_should_quit(bool should_quit) { should_quit_ = should_quit; }  ///< @brief 设置退出状态
     
     sf::Vector2i get_mouse_position() const;            ///< @brief 获取鼠标位置（屏幕坐标）
     sf::Vector2i get_mouse_position_window() const;     ///< @brief 获取鼠标位置（窗口坐标）
@@ -56,7 +54,8 @@ public:
 
 private:
     template <typename Input>
-    void update(Input input, bool pressed);
+    void update(Input input, bool pressed);         ///< @brief 更新输入状态
+    void quit();                                    ///< @brief 退出游戏
 
     void toggle_fullscreen();
 
@@ -73,8 +72,8 @@ private:
     std::unordered_map<Action, std::vector<std::variant<Scancode, Button>>> action_to_input_copy_;     ///< @brief 动作到具体输入
     std::unordered_map<Action, ActionState> action_states_;                                            ///< @brief 储存每个动作当前的状态
 
-    bool should_quit_ = false;           ///< @brief 退出标志
     bool is_full_screen_ = false;        ///< @brief 是否全屏
+    entt::dispatcher* dispatcher_;
 };
 } // namespace engine::input
 

@@ -1,5 +1,7 @@
 #include "engine/input/input_manager.hpp"
 #include "engine/core/config.hpp"
+#include "engine/utils/events.hpp"
+#include "entt/signal/dispatcher.hpp"
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <spdlog/spdlog.h>
 #include <optional>
@@ -7,9 +9,10 @@
 
 namespace engine::input {
 
-InputManager::InputManager(sf::RenderWindow* window, const engine::core::Config* config)
+InputManager::InputManager(sf::RenderWindow* window, const engine::core::Config* config, entt::dispatcher* dispatcher)
     : window_obs_{window}
-    , action_to_input_copy_{config->action_to_input_} {
+    , action_to_input_copy_{config->action_to_input_}
+    , dispatcher_{dispatcher} {
 
     for (const auto& [action, _] : action_to_input_copy_) {
         action_states_.emplace(action, ActionState::Inactive);
@@ -68,6 +71,10 @@ void InputManager::handle_event(const sf::Event& event) {
     if (auto mouse = event.getIf<sf::Event::MouseButtonReleased>(); mouse) {
         update(mouse->button, false);
     }
+}
+
+void InputManager::quit() {
+    dispatcher_->trigger<engine::utils::QuitEvent>();
 }
 
 void InputManager::end_frame() {
