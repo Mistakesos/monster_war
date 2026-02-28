@@ -1,10 +1,10 @@
 #pragma once
-
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/Color.hpp>
 #include <string>
 #include <optional>
+#include <entt/core/fwd.hpp>          // 新增：用于 entt::id_type
 
 namespace sf {
     class RenderWindow;
@@ -31,7 +31,7 @@ public:
     /**
      * @brief 构造函数
      *
-     * @param window 指向有效的 SDL_Renderer 的指针。不能为空。
+     * @param window 指向有效的 sf::RenderWindow 的指针。不能为空。
      * @param resource_manager 指向有效的 ResourceManager 的指针。不能为空。
      * @throws std::runtime_error 如果任一指针为 nullptr。
      */
@@ -72,11 +72,15 @@ public:
 
     /**
      * @brief 绘制文字
-     * @param text 要绘制的文字
+     * @param str 要绘制的文字内容
+     * @param font_id 字体ID（entt::id_type）
+     * @param font_size 字体大小
+     * @param position 位置（世界坐标）
+     * @param font_color 字体颜色，默认白色
      */
     void draw_text(const Camera& camera
                  , std::string_view str
-                 , std::string_view font_id
+                 , entt::id_type font_id
                  , unsigned int font_size
                  , sf::Vector2f position
                  , sf::Color font_color = sf::Color::White
@@ -84,11 +88,15 @@ public:
 
     /**
      * @brief 绘制 ui 文字
-     * @param text 要绘制的 ui 文字
+     * @param str 要绘制的文字内容
+     * @param font_id 字体ID（entt::id_type）
+     * @param font_size 字体大小
+     * @param position 位置（屏幕坐标）
+     * @param font_color 字体颜色，默认白色
      */
     void draw_ui_text(const Camera& camera
                     , std::string_view str
-                    , std::string_view font_id
+                    , entt::id_type font_id
                     , unsigned int font_size
                     , sf::Vector2f position
                     , sf::Color font_color = sf::Color::White
@@ -101,7 +109,7 @@ public:
     void draw_ui_filled_rect(const Camera& camera, const sf::FloatRect& rect, sf::Color color);
 
 private:
-    sf::RenderWindow* window_obs_ = nullptr;                                    ///< @brief 窗口的观察者指针，不负责管理生命周期，不要在该类里手动释放他
-    engine::resource::ResourceManager* resourec_manager_obs_ = nullptr;         ///< @brief 资源管理器的观察者指针，不负责管理生命周期，不要在该类里手动释放他
+    sf::RenderWindow* window_obs_ = nullptr;                                    ///< @brief 窗口的观察者指针，不负责管理生命周期
+    engine::resource::ResourceManager* resource_manager_obs_ = nullptr;         ///< @brief 资源管理器的观察者指针，不负责管理生命周期
 };
 } // namespace engine::render

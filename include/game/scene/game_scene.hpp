@@ -12,11 +12,7 @@ public:
     ~GameScene();
 
 private:
-    // --- 测试回调事件 ---
-    int scene_index_ = 0;
-    bool on_replace();
-    bool on_push();
-    bool on_pop();
-    bool on_quit();
+    // --- 资源管理器 ---
+    void test_resource_manager();
 };
 }

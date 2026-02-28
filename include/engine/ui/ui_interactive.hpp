@@ -2,6 +2,8 @@
 #include "engine/ui/ui_element.hpp"
 #include "engine/ui/state/ui_state.hpp"
 #include <SFML/Graphics/Sprite.hpp>
+#include <entt/core/fwd.hpp>
+#include <entt/core/hashed_string.hpp>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -25,10 +27,10 @@ public:
 
     virtual void clicked() {}       ///< @brief 如果有点击事件，则重写该方法
 
-    void add_sprite(std::string_view name, std::unique_ptr<sf::Sprite> sprite);     ///< @brief 添加精灵
-    void set_sprite(std::string_view name);                                         ///< @brief 设置当前显示的精灵
-    void add_sound(std::string_view name, std::string_view path);                   ///< @brief 添加音效
-    void play_sound(std::string_view name);                                         ///< @brief 播放音效
+    void add_sprite(entt::id_type name_id, std::unique_ptr<sf::Sprite> sprite);     ///< @brief 添加精灵
+    void set_sprite(entt::id_type name_id);                                         ///< @brief 设置当前显示的精灵
+    void add_sound(entt::id_type name_id, entt::hashed_string hashed_path);         ///< @brief 添加音效（预加载）
+    void play_sound(entt::id_type name_id);                                         ///< @brief 播放音效
     // --- Getters and Setters ---
     void set_state(std::unique_ptr<engine::ui::state::UIState> state);              ///< @brief 设置当前状态
     engine::ui::state::UIState* get_state() const { return current_state_.get(); }  ///< @brief 获取当前状态
@@ -43,9 +45,9 @@ public:
 protected:
     engine::core::Context& context_;                                ///< @brief 可交互元素很可能需要其他引擎组件
     std::unique_ptr<engine::ui::state::UIState> current_state_;     ///< @brief 当前状态
-    std::unordered_map<std::string, std::unique_ptr<sf::Sprite>> sprites_; ///< @brief 精灵集合
-    std::unordered_map<std::string, std::string> sounds_;           ///< @brief 音效集合，key为音效名称，value为音效文件路径
-    sf::Sprite* current_sprite_ = nullptr;                          ///< @brief 当前显示的精灵
+    std::unordered_map<entt::id_type, std::unique_ptr<sf::Sprite>> sprites_; ///< @brief 精灵集合，键为名称ID
+    std::unordered_map<entt::id_type, entt::id_type> sounds_;       ///< @brief 音效集合，key为音效名称ID，value为音效ID（路径哈希）
+    entt::id_type current_sprite_id_;                  ///< @brief 当前显示的精灵ID
     bool interactive_ = true;                                       ///< @brief 是否可交互
 };
 } // namespace engine::ui

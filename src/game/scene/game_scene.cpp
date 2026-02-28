@@ -1,56 +1,39 @@
 #include "game/scene/game_scene.hpp"
 #include "engine/input/input_manager.hpp"
+#include "engine/resource/resource_manager.hpp"
+#include "engine/audio/audio_player.hpp"
+#include "engine/ui/ui_image.hpp"
+#include "engine/ui/ui_label.hpp"
 #include "engine/core/context.hpp"
 #include "engine/utils/events.hpp"
 #include "entt/signal/sigh.hpp"
 #include "entt/signal/dispatcher.hpp"
+#include "entt/core/hashed_string.hpp"
 #include <spdlog/spdlog.h>
+
+using namespace entt::literals;
 
 namespace game::scene {
 GameScene::GameScene(engine::core::Context& context)
     : Scene{"GameScene", context} {
-    static int count = 0;
-    scene_index_ = count++;
-    spdlog::info("场景编号：{}", scene_index_);
-    
-    // 注册输入回调事件 (J,K 键)
-    auto& input_manager = context_.get_input_manager();
-    input_manager.on_action(Action::Jump).connect<&GameScene::on_replace>(this);     // J 键
-    input_manager.on_action(Action::MouseLeft).connect<&GameScene::on_push>(this);   // 鼠标左键
-    input_manager.on_action(Action::MouseRight).connect<&GameScene::on_pop>(this);   // 鼠标右键
-    input_manager.on_action(Action::Pause).connect<&GameScene::on_quit>(this);        // P 键
+    test_resource_manager();
 }
 
 GameScene::~GameScene() {
-    // 断开输入回调事件 (谁连接，谁负责断开)
-    auto& input_manager = context_.get_input_manager();
-    input_manager.on_action(Action::Jump).disconnect<&GameScene::on_replace>(this);    // J 键
-    input_manager.on_action(Action::MouseLeft).disconnect<&GameScene::on_push>(this);  // 鼠标左键
-    input_manager.on_action(Action::MouseRight).disconnect<&GameScene::on_pop>(this);  // 鼠标右键
-    input_manager.on_action(Action::Pause).disconnect<&GameScene::on_quit>(this);       // P 键
 }
 
-bool GameScene::on_replace() {
-    spdlog::info("on_replace, 切换场景");
-    request_replace_scene(std::make_unique<game::scene::GameScene>(context_));
-    return true;
-}
-
-bool GameScene::on_push() {
-    spdlog::info("on_push, 压入场景");
-    request_push_scene(std::make_unique<game::scene::GameScene>(context_));
-    return true;
-}
-
-bool GameScene::on_pop() {
-    spdlog::info("on_pop, 弹出编号为 {} 的场景", scene_index_);
-    request_pop_scene();
-    return true;
-}
-
-bool GameScene::on_quit() {
-    spdlog::info("on_quit, 退出游戏");
-    quit();
-    return true;
+void GameScene::test_resource_manager() {
+    // 载入资源
+    context_.get_resource_manager().load_texture("assets/textures/Buildings/Castle.png"_hs);
+    // 播放音乐
+    context_.get_audio_player().play_music("assets/audio/4 Battle Track INTRO TomMusic.ogg"_hs);
+    
+    // 测试UI元素（使用载入的资源）
+    ui_manager_->add_element(std::make_unique<engine::ui::UIImage>(context_, "assets/textures/Buildings/Castle.png"_hs));
+    ui_manager_->add_element(std::make_unique<engine::ui::UILabel>(
+        context_,
+        "Hello, World!", 
+        "assets/fonts/VonwaonBitmap-16px.ttf"
+    ));
 }
 } // namespace game::scene

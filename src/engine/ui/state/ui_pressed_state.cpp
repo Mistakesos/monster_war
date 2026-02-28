@@ -4,14 +4,17 @@
 #include "engine/input/input_manager.hpp"
 #include "engine/core/context.hpp"
 #include "engine/audio/audio_player.hpp"
-#include <spdlog/spdlog.h>
 #include "engine/ui/state/ui_pressed_state.hpp"
+#include <spdlog/spdlog.h>
+#include <entt/core/hashed_string.hpp>
+
+using namespace entt::literals;
 
 namespace engine::ui::state {
 UIPressedState::UIPressedState(engine::ui::UIInteractive* owner)
     : UIState{owner} {
-    owner_->set_sprite("pressed");
-    owner_->play_sound("pressed");
+    owner_->set_sprite("pressed"_hs);
+    owner_->play_sound("pressed"_hs);
     spdlog::debug("切换到按下状态");
 }
 

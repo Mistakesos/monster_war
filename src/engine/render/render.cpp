@@ -7,18 +7,18 @@
 #include <SFML/Graphics/Text.hpp>
 #include <spdlog/spdlog.h>
 #include <stdexcept>
-#include <iostream>
 
 namespace engine::render {
+
 Renderer::Renderer(sf::RenderWindow* window, engine::resource::ResourceManager* resource_manager)
     : window_obs_{window}
-    , resourec_manager_obs_{resource_manager} {
+    , resource_manager_obs_{resource_manager} {
     spdlog::trace("构造 Renderer...");
     if (!window_obs_) {
         throw std::runtime_error("Renderer 构造失败：提供的 window 指针为空");
     }
-    if (!resourec_manager_obs_) {
-        throw std::runtime_error("ResourceManager 构造失败：提供的 ResourceManager 指针为空");
+    if (!resource_manager_obs_) {
+        throw std::runtime_error("Renderer 构造失败：提供的 ResourceManager 指针为空");
     }
     spdlog::trace("Renderer 构造成功");
 }
@@ -109,15 +109,16 @@ void Renderer::draw_ui_sprite(const Camera& camera, sf::Sprite& sprite) {
 
 void Renderer::draw_text(const Camera& camera
                        , std::string_view str
-                       , std::string_view font_id
+                       , entt::id_type font_id
                        , unsigned int font_size
                        , sf::Vector2f position
                        , sf::Color font_color) {
     window_obs_->setView(camera.get_world_view());
 
-    auto font = resourec_manager_obs_->get_font(font_id);
+    // 通过 id 获取字体
+    auto* font = resource_manager_obs_->get_font(font_id);
     if (!font) {
-        spdlog::warn("drawUIText 获取字体失败: {} 大小 {}", std::string(font_id), font_size);
+        spdlog::warn("draw_text 获取字体失败: id {} 大小 {}", font_id, font_size);
         return;
     }
 
@@ -136,15 +137,15 @@ void Renderer::draw_text(const Camera& camera
 
 void Renderer::draw_ui_text(const Camera& camera
                           , std::string_view str
-                          , std::string_view font_id
+                          , entt::id_type font_id
                           , unsigned int font_size
                           , sf::Vector2f position
                           , sf::Color font_color) {
     window_obs_->setView(camera.get_ui_view());
 
-    auto font = resourec_manager_obs_->get_font(font_id);
+    auto* font = resource_manager_obs_->get_font(font_id);
     if (!font) {
-        spdlog::warn("drawUIText 获取字体失败: {} 大小 {}", std::string(font_id), font_size);
+        spdlog::warn("draw_ui_text 获取字体失败: id {} 大小 {}", font_id, font_size);
         return;
     }
 
@@ -169,4 +170,5 @@ void Renderer::draw_ui_filled_rect(const Camera& camera, const sf::FloatRect& re
     shape.setFillColor(color);
     window_obs_->draw(shape);
 }
+
 } // namespace engine::render

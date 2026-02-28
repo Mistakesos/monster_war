@@ -1,10 +1,11 @@
 #pragma once
-#include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 #include <memory>
 #include <optional>
 #include <SFML/Audio.hpp>
+#include "entt/entity/fwd.hpp"
 
 namespace engine::resource {
     class ResourceManager;
@@ -29,13 +30,24 @@ public:
     // --- 音效控制 ---
     /**
      * @brief 播放音效
-     * @param sound_path 音效路径
+     * @note 必须确保 ResourceManager 加载了音效。
+     * @param sound_id 音效id
      * @param volume 音量 0-100，默认 100
      * @param loop 是否循环，默认 false
      * @return 返回 sf::Sound* 可用于后续控制（pause/stop/setVolume），失败返回 nullptr
      */
-    sf::Sound* play_sound(std::string_view sound_path, bool loop = false, std::optional<float> volume = std::nullopt);
+    sf::Sound* play_sound(entt::id_type sound_id, bool loop = false, std::optional<float> volume = std::nullopt);
 
+    /**
+     * @brief 播放音效
+     * @note 如果尚未缓存，则通过 ResourceManager 加载音效。
+     * @param hashed_path 音效文件路径的哈希值。
+     * @param volume 音量 0-100，默认 100
+     * @param loop 是否循环，默认 false
+     * @return 返回 sf::Sound* 可用于后续控制（pause/stop/setVolume），失败返回 nullptr
+     */
+    sf::Sound* play_sound(entt::hashed_string hashed_path, bool loop = false, std::optional<float> volume = std::nullopt);
+    
     /**
      * @brief 设置所有音效的全局音量
      */
@@ -49,11 +61,19 @@ public:
     // --- 音乐控制 ---
     /**
      * @brief 播放背景音乐（自动停止上一首）
-     * @param music_path 音乐路径
+     * @param music_id 音乐id
      * @param loop 是否循环，默认 true
      * @return 成功返回 true
      */
-    bool play_music(std::string_view music_path, bool loop = true);
+    bool play_music(entt::id_type music_id, bool loop = true);
+
+    /**
+     * @brief 播放背景音乐（自动停止上一首）
+     * @param hashed_path 音乐文件路径的哈希值
+     * @param loop 是否循环，默认 true
+     * @return 成功返回 true
+     */
+    bool play_music(entt::hashed_string hashed_path, bool loop = true);
 
     void stop_music();
     void pause_music();
@@ -68,8 +88,8 @@ private:
     // 正在播放的音效实例（用于控制音量、暂停等）
     std::vector<std::unique_ptr<sf::Sound>> active_sounds_;
 
-    // 当前背景音乐路径（防止重复播放）
-    std::string current_music_path_;
+    // 当前背景音乐ID（防止重复播放）
+    entt::id_type current_music_id_;   ///< @brief 当前正在播放的音乐ID，用于避免重复播放同一音乐。
 
     float music_volume_ = 100.f;
     float sound_volume_ = 100.f;

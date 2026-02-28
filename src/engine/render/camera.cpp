@@ -13,10 +13,10 @@ Camera::Camera(sf::RenderWindow* window, std::optional<sf::FloatRect> limit_boun
     , ui_view_{window->getDefaultView()}
     , limit_bounds_{limit_bounds} {
     spdlog::trace("Camera 初始化成功");
-    // world_view_.zoom(0.5f);
-    // ui_view_.zoom(0.5f);
-    // world_view_.setCenter(world_view_.getSize() / 2.f);
-    // ui_view_.setCenter(ui_view_.getSize() / 2.f);
+    world_view_.zoom(0.5f);
+    ui_view_.zoom(0.5f);
+    world_view_.setCenter(world_view_.getSize() / 2.f);
+    ui_view_.setCenter(ui_view_.getSize() / 2.f);
     
     window_obs_->setView(world_view_);
 }

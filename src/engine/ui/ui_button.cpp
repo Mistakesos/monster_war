@@ -3,6 +3,9 @@
 #include "engine/core/context.hpp"
 #include "engine/resource/resource_manager.hpp"
 #include <spdlog/spdlog.h>
+#include <entt/core/hashed_string.hpp>
+
+using namespace entt::literals;
 
 namespace engine::ui {
 UIButton::UIButton(engine::core::Context& context
@@ -17,19 +20,19 @@ UIButton::UIButton(engine::core::Context& context
                   , std::move(size)}
     , callback_{std::move(callback)} {
     auto& resource_manager = context.get_resource_manager();
-    auto tex_normal = resource_manager.get_texture(normal_sprite_id);
-    auto tex_hover = resource_manager.get_texture(hover_sprite_id);
-    auto tex_pressed = resource_manager.get_texture(pressed_sprite_id);
-    add_sprite("normal", std::make_unique<sf::Sprite>(*tex_normal));
-    add_sprite("hover", std::make_unique<sf::Sprite>(*tex_hover));
-    add_sprite("pressed", std::make_unique<sf::Sprite>(*tex_pressed));
+    auto tex_normal = resource_manager.get_texture(entt::hashed_string{normal_sprite_id.data(), normal_sprite_id.size()});
+    auto tex_hover = resource_manager.get_texture(entt::hashed_string{hover_sprite_id.data(), hover_sprite_id.size()});
+    auto tex_pressed = resource_manager.get_texture(entt::hashed_string{pressed_sprite_id.data(), pressed_sprite_id.size()});
+    add_sprite("normal"_hs, std::make_unique<sf::Sprite>(*tex_normal));
+    add_sprite("hover"_hs, std::make_unique<sf::Sprite>(*tex_hover));
+    add_sprite("pressed"_hs, std::make_unique<sf::Sprite>(*tex_pressed));
 
     // 设置默认状态为"normal"
     set_state(std::make_unique<engine::ui::state::UINormalState>(this));
 
     // 设置默认音效
-    add_sound("hover", "assets/audio/button_hover.wav");
-    add_sound("pressed", "assets/audio/button_click.wav");
+    add_sound("hover"_hs, "assets/audio/button_hover.wav"_hs);
+    add_sound("pressed"_hs, "assets/audio/button_click.wav"_hs);
     spdlog::trace("UIButton 构造完成");
 }
 

@@ -1,22 +1,65 @@
 #include "engine/ui/ui_image.hpp"
 #include "engine/core/context.hpp"
 #include "engine/render/render.hpp"
+#include "engine/resource/resource_manager.hpp"
+#include <spdlog/spdlog.h> // 教程中使用了，如果不需要可以去掉
 
 namespace engine::ui {
+
+// --- 1. 通过路径构造 ---
+UIImage::UIImage(engine::core::Context& context
+               , std::string_view texture_path
+               , sf::Vector2f position
+               , sf::Vector2f size
+               , const std::optional<sf::IntRect>& texture_rect
+               , bool is_flipped) 
+    : UIElement{std::move(position), std::move(size)}
+    // 关键：SFML3必须在这里塞入真实的 Texture，所以我们现场用 context 获取它。
+    // 【注意】请将下面的 context.get_texture 替换为你实际资源管理器获取纹理的方法
+    // 比如：context.get_resource_manager().get_texture(...)
+    , sprite_{*context.get_resource_manager().get_texture(entt::hashed_string{texture_path.data()}.value())}
+    , texture_id_{entt::hashed_string{texture_path.data()}.value()}
+{
+    if (texture_rect.has_value()) {
+        sprite_.setTextureRect(texture_rect.value());
+    }
+    set_flipped(is_flipped);
+}
+
+// --- 2. 通过ID构造 ---
+UIImage::UIImage(engine::core::Context& context
+               , entt::id_type texture_id
+               , sf::Vector2f position
+               , sf::Vector2f size
+               , const std::optional<sf::IntRect>& texture_rect
+               , bool is_flipped) 
+    : UIElement{std::move(position), std::move(size)}
+    , sprite_{*context.get_resource_manager().get_texture(texture_id)} // 现场解析哈希ID
+    , texture_id_{texture_id}
+{
+    if (texture_rect.has_value()) {
+        sprite_.setTextureRect(texture_rect.value());
+    }
+    set_flipped(is_flipped);
+}
+
+// --- 3. 原来的 Texture 构造 ---
 UIImage::UIImage(const sf::Texture& texture
                , sf::Vector2f position
                , sf::Vector2f size
                , const std::optional<sf::IntRect>& texture_rect
                , bool is_flipped) 
     : UIElement{std::move(position), std::move(size)}
-    , sprite_{texture} {
+    , sprite_{texture} // 直接传入
+{
     if (texture_rect.has_value()) {
         sprite_.setTextureRect(texture_rect.value());
     }
-
     set_flipped(is_flipped);
 }
 
+
+// --- 核心逻辑完全保留原样 ---
 void UIImage::render(engine::core::Context& context) {
     if (!visible_) return;
 
@@ -56,4 +99,5 @@ void UIImage::set_flipped(bool flipped) {
         sprite_.setScale({1.f, 1.f});
     }
 }
+
 } // namespace engine::ui

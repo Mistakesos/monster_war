@@ -5,11 +5,14 @@
 #include "engine/input/input_manager.hpp"
 #include "engine/core/context.hpp"
 #include <spdlog/spdlog.h>
+#include <entt/core/hashed_string.hpp>
+
+using namespace entt::literals;
 
 namespace engine::ui::state {
 UIHoverState::UIHoverState(engine::ui::UIInteractive* owner)
     : UIState{owner} {
-    owner_->set_sprite("hover");
+    owner_->set_sprite("hover"_hs);
     spdlog::debug("切换到悬停状态");
 }
 
