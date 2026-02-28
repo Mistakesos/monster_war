@@ -36,6 +36,8 @@ Game::Game()
                                                      , *audio_player_
                                                      , *game_state_)}
     , scene_manager_{std::make_unique<engine::scene::SceneManager>(*context_)} {
+    resource_manager_->load_resource("assets/data/resource_mapping.json");  // 载入默认资源映射文件
+        
     // 设置游戏音量（从 assets/config.json 里读取）
     audio_player_->set_music_volume(config_->music_volume_);    // 设置背景音乐音量
     audio_player_->set_sound_volume(config_->sound_volume_);    // 设置音效音量

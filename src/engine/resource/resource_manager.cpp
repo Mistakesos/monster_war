@@ -1,12 +1,49 @@
 #include "engine/resource/resource_manager.hpp"
 #include <entt/core/hashed_string.hpp>
 #include <spdlog/spdlog.h>
+#include <nlohmann/json.hpp>
 #include <filesystem>
 
 namespace engine::resource {
 
 // ======================== 内部逻辑提取 ========================
 // 这里的逻辑遵循：有路径就尝试加载，没路径就只查缓存
+
+void ResourceManager::load_resource(std::string_view file_path) {
+    std::filesystem::path path(file_path);
+    if (!std::filesystem::exists(path)) {
+        spdlog::warn("资源映射文件不存在: {}", file_path);
+        return;
+    }
+    std::ifstream file(path);
+    nlohmann::json json;
+    file >> json;
+    try {
+        if (json.contains("sound")) {
+            for (const auto& [key, value] : json["sound"].items()) {
+                load_sound(entt::hashed_string(key.c_str()), value.get<std::string>());
+            }
+        }
+        if (json.contains("music")) {
+            for (const auto& [key, value] : json["music"].items()) {
+                load_music(entt::hashed_string(key.c_str()), value.get<std::string>());
+            }
+        }
+        if (json.contains("texture")) {
+            for (const auto& [key, value] : json["texture"].items()) {
+                load_texture(entt::hashed_string(key.c_str()), value.get<std::string>());
+            }
+        }
+        if (json.contains("font")) {
+            for (const auto& [key, value] : json["font"].items()) {
+                load_font(entt::hashed_string(key.c_str()), value.get<std::string>());
+            }
+        }   
+    } catch (const nlohmann::json::exception& e) {
+        spdlog::error("加载资源文件失败: {}", e.what());
+    }
+}
+
 
 // ---------------- Texture ----------------
 sf::Texture* ResourceManager::load_texture(entt::id_type id, std::string_view file_path) {

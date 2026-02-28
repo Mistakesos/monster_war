@@ -17,7 +17,12 @@ public:
 
     ResourceManager(const ResourceManager&) = delete;
     ResourceManager& operator=(const ResourceManager&) = delete;
+    ResourceManager(ResourceManager&&) = delete;
+    ResourceManager& operator=(ResourceManager&&) = delete;
 
+    // 加载资源
+    void load_resource(std::string_view file_path);
+    
     // --- Texture ---
     /**
      * @brief 加载纹理，若已缓存则直接返回缓存版本。
