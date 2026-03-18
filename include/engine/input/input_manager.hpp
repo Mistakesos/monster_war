@@ -60,6 +60,7 @@ private:
     void toggle_fullscreen();
 
     sf::RenderWindow* window_obs_ = nullptr;        ///< @brief 用于传入获取鼠标的逻辑位置
+    const engine::core::Config* config_obs_ = nullptr;    ///< @brief 配置文件的非拥有指针
     /**
      * @brief 核心数据结构：存储动作名称函数列表的映射
      * 

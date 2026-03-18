@@ -34,7 +34,7 @@ private:
 
 public:
     // --- 默认配置 ---
-    std::string window_title_ = "Sunny Land";
+    std::string window_title_ = "Monster War";
     sf::Vector2u window_size_ = {1280u, 720u};
     bool window_resizable_ = true;
 

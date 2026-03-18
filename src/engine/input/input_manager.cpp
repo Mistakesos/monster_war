@@ -11,6 +11,7 @@ namespace engine::input {
 
 InputManager::InputManager(sf::RenderWindow* window, const engine::core::Config* config, entt::dispatcher* dispatcher)
     : window_obs_{window}
+    , config_obs_{config}
     , action_to_input_copy_{config->action_to_input_}
     , dispatcher_{dispatcher} {
 
@@ -96,12 +97,10 @@ void InputManager::end_frame() {
 // === 内部工具 ===
 
 void InputManager::toggle_fullscreen() {
-    window_obs_->close();
-
     if (is_full_screen_) {
-        window_obs_->create(sf::VideoMode(sf::Vector2u(1280u, 720u)), "Sunny Land", sf::State::Windowed);
+        window_obs_->create(sf::VideoMode(config_obs_->window_size_), config_obs_->window_title_, sf::State::Windowed);
     } else {
-        window_obs_->create(sf::VideoMode::getDesktopMode(), "Sunny Land", sf::State::Fullscreen);
+        window_obs_->create(sf::VideoMode::getDesktopMode(), config_obs_->window_title_, sf::State::Fullscreen);
     }
 
     is_full_screen_ = !is_full_screen_;
