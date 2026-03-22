@@ -1,116 +1,84 @@
 #pragma once
-#include "component.hpp"
-#include <SFML/Graphics/Sprite.hpp>
+#include "engine/component/animation_component.hpp"
+#include "engine/component/sprite_component.hpp"
+#include <entt/entity/entity.hpp>
 #include <SFML/System/Vector2.hpp>
-#include <SFML/Graphics/RenderTexture.hpp>
+#include <SFML/Graphics/Rect.hpp>
+#include <nlohmann/json.hpp>
 #include <vector>
-
-namespace engine::core {
-    class Context;
-} // namespace engine::core
+#include <utility>
+#include <optional>
 
 namespace engine::component {
+
 /**
  * @brief 定义瓦片的类型，用于游戏逻辑（例如碰撞）。
+ * @note 当前项目并未用到此信息
  */
-enum class TileType {
-    Empty,      ///< @brief 空白瓦片
-    Normal,     ///< @brief 普通瓦片
-    Solid,      ///< @brief 静止可碰撞瓦片
-    Unisolid,   ///< @brief 单向静止可碰撞瓦片
-    Slope_0_1,  ///< @brief 斜坡瓦片，高度:左0  右1
-    Slope_1_0,  ///< @brief 斜坡瓦片，高度:左1  右0
-    Slope_0_2,  ///< @brief 斜坡瓦片，高度:左0  右1/2
-    Slope_2_1,  ///< @brief 斜坡瓦片，高度:左1/2右1
-    Slope_1_2,  ///< @brief 斜坡瓦片，高度:左1  右1/2
-    Slope_2_0,  ///< @brief 斜坡瓦片，高度:左1/2右0
-    Hazard,     ///< @brief 危险瓦片（例如火焰、尖刺等）
-    Ladder      ///< @brief 梯子瓦片
+ enum class TileType {
+    EMPTY,      ///< @brief 空白瓦片
+    NORMAL,     ///< @brief 普通瓦片
+    SOLID,      ///< @brief 静止可碰撞瓦片
+    HAZARD,     ///< @brief 危险瓦片（例如火焰、尖刺等）
     // 未来补充其它类型
 };
 
 /**
- * @brief 包含单个瓦片的渲染和逻辑信息。
+ * @brief 瓦片信息，包含精灵、类型、动画和属性。
+ * @note 它只是辅助LevelLoader解析的临时数据，不会保存在游戏中。
  */
 struct TileInfo {
-    TileInfo(sf::Sprite& s, TileType t = TileType::Empty)
-        : sprite(std::move(s)), type(t) {
+
+    TileInfo() = default;
+
+    TileInfo(const sf::Texture& texture, 
+             engine::component::TileType type, 
+             std::optional<engine::component::Animation> animation = std::nullopt, 
+             std::optional<nlohmann::json> properties = std::nullopt)
+        : sprite_(texture)
+        , type_(type)
+        , animation_(std::move(animation))
+        , properties_(std::move(properties)) {
     }
-    sf::Sprite sprite;          ///< @brief 瓦片的视觉表示
-    TileType type;              ///< @brief 瓦片的逻辑类型
+
+    TileInfo(sf::Sprite& sprite, 
+             engine::component::TileType type, 
+             std::optional<engine::component::Animation> animation = std::nullopt, 
+             std::optional<nlohmann::json> properties = std::nullopt)
+        : sprite_(std::move(sprite))
+        , type_(type)
+        , animation_(std::move(animation))
+        , properties_(std::move(properties)) {
+    }
+
+    sf::Sprite sprite_;                                     ///< @brief 精灵
+    engine::component::TileType type_;                      ///< @brief 类型
+    std::optional<engine::component::Animation> animation_; ///< @brief 动画（支持Tiled动画图块）
+    std::optional<nlohmann::json> properties_;              ///< @brief 属性（存放自定义属性，方便LevelLoader解析）
 };
 
 /**
- * @brief 管理和渲染瓦片地图层。
- *
- * 存储瓦片地图的布局、每个瓦片的精灵信息和类型。
- * 负责在渲染阶段绘制可见的瓦片。
+ * @brief 瓦片层组件，包含瓦片大小、地图大小和瓦片实体列表。
+ * @note 现在瓦片层更像一个容器，只是存储所有的“瓦片”，而每个瓦片就是一个实体。
  */
-class TileLayerComponent final : public Component {
-    friend class engine::object::GameObject;
-public:
-    // TileLayerComponent() = default;
+struct TileLayerComponent {
     /**
      * @brief 构造函数
-     * @param tile_size 单个瓦片尺寸（像素）
-     * @param map_size 地图尺寸（瓦片数）
-     * @param tiles 初始化瓦片数据的容器 (会被移动)
+     * @param tile_size 瓦片大小
+     * @param map_size 地图大小
+     * @param tiles 瓦片实体列表
      */
-    TileLayerComponent(engine::object::GameObject* owner
-                     , sf::Vector2i tile_size
-                     , sf::Vector2i map_size
-                     , std::vector<TileInfo>&& tiles
-    );
-    ~TileLayerComponent();
+    TileLayerComponent(sf::Vector2i tile_size, 
+                       sf::Vector2i map_size, 
+                       std::vector<entt::entity> tiles) : 
+                       tile_size_(std::move(tile_size)), 
+                       map_size_(std::move(map_size)),
+                       tiles_(std::move(tiles)) {
+    }
 
-    /**
-     * @brief 根据瓦片坐标获取瓦片信息
-     * @param pos 瓦片坐标 (0 <= x < map_size_.x, 0 <= y < map_size_.y)
-     * @return const TileInfo* 指向瓦片信息的指针，如果坐标无效则返回 nullptr
-     */
-    const TileInfo* get_tile_info_at(sf::Vector2i pos) const;
-
-    /**
-     * @brief 根据瓦片坐标获取瓦片类型
-     * @param pos 瓦片坐标 (0 <= x < map_size_.x, 0 <= y < map_size_.y)
-     * @return TileType 瓦片类型，如果坐标无效则返回 TileType::EMPTY
-     */
-    TileType get_tile_type_at(sf::Vector2i pos) const;
-
-    /**
-     * @brief 根据世界坐标获取瓦片类型
-     * @param world_pos 世界坐标
-     * @return TileType 瓦片类型，如果坐标无效或对应空瓦片则返回 TileType::EMPTY
-     */
-    TileType get_tile_type_at_world_pos(const sf::Vector2f& world_pos) const;
-
-    sf::Vector2i get_tile_size() const { return tile_size_; }                                                              ///< @brief 获取单个瓦片尺寸
-    sf::Vector2i get_map_size() const { return map_size_; }                                                                ///< @brief 获取地图尺寸
-    sf::Vector2f get_world_size() const { return sf::Vector2f(map_size_.x * tile_size_.x, map_size_.y * tile_size_.y); }   ///< @brief 获取地图世界尺寸
-    const std::vector<TileInfo>& get_tiles() const { return tiles_; }                                                      ///< @brief 获取瓦片容器
-    const sf::Vector2f& get_offset() const { return offset_; }                                                             ///< @brief 获取瓦片层的偏移量
-    bool is_hidden() const { return is_hidden_; }                                                                          ///< @brief 获取是否隐藏（不渲染）
-
-    void set_offset(sf::Vector2f offset) { offset_ = std::move(offset); }                                                  ///< @brief 设置瓦片层的偏移量
-    void set_hidden(bool hidden) { is_hidden_ = hidden; }                                                                  ///< @brief 设置是否隐藏（不渲染）
-
-protected:
-    // 核心循环方法
-    void update(sf::Time, engine::core::Context&) override {}
-    void render(engine::core::Context& context) override;
-
-private:
-    void rebuild_cache() const;
-
-    sf::Vector2i tile_size_;            ///< @brief 单个瓦片尺寸（像素）
-    sf::Vector2i map_size_;             ///< @brief 地图尺寸（瓦片数）
-    std::vector<TileInfo> tiles_;       ///< @brief 存储所有瓦片信息 (按"行主序"存储, index = y * map_width_ + x)
-    sf::Vector2f offset_ = {0.f, 0.f};  ///< @brief 瓦片层在世界中的偏移量 (瓦片层通常不需要缩放及旋转，因此不引入Transform组件)
-                                        ///< offset_ 最好也保持默认的0，以免增加不必要的复杂性
-    bool is_hidden_ = false;            ///< @brief 是否隐藏（不渲染）
-
-    mutable sf::RenderTexture render_texture_;                              // mutable 因为 render() 是 const 上下文也能重建
-    mutable bool cache_dirty_ = true;                                       // 是否需要重新绘制到 render_texture_
-    mutable std::unique_ptr<sf::Sprite> cached_sprite_ = nullptr;           // 从 render_texture_ 生成的 sprite，每帧只 draw 这一个
+    sf::Vector2i tile_size_;              ///< @brief 瓦片大小
+    sf::Vector2i map_size_;               ///< @brief 地图大小
+    std::vector<entt::entity> tiles_;     ///< @brief 瓦片实体列表，每个瓦片对应一个实体，按顺序排列
 };
-} // namespace engine::component
+
+}

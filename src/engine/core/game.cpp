@@ -7,7 +7,6 @@
 #include "engine/scene/scene_manager.hpp"
 #include "engine/render/render.hpp"
 #include "engine/render/camera.hpp"
-#include "engine/object/game_object.hpp"
 #include "engine/audio/audio_player.hpp"
 #include "engine/core/game_state.hpp"
 #include "engine/core/context.hpp"

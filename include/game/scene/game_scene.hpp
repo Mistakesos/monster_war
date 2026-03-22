@@ -1,5 +1,7 @@
 #pragma once
 #include "engine/scene/scene.hpp"
+#include "engine/system/fwd.hpp"
+#include <memory>
 
 namespace game::scene {
 /**
@@ -8,11 +10,20 @@ namespace game::scene {
 class GameScene final : public engine::scene::Scene {
 public:
     GameScene(engine::core::Context& context);
-    
     ~GameScene();
+
+    void update(sf::Time delta) override;
+    void render() override;
 
 private:
     // --- 资源管理器 ---
     void test_resource_manager();
+
+    // --- 测试 ECS
+    void test_ecs();
+
+    std::unique_ptr<engine::system::RenderSystem> render_system_;
+    std::unique_ptr<engine::system::MovementSystem> movement_system_;
+    std::unique_ptr<engine::system::AnimationSystem> animation_system_;
 };
 }

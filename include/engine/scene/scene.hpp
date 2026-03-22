@@ -1,17 +1,18 @@
 #pragma once
 #include "engine/ui/ui_manager.hpp"
-#include <vector>
+#include <entt/entity/registry.hpp>
+#include <SFML/System/Time.hpp>
 #include <memory>
 #include <string>
-#include <SFML/System/Time.hpp>
+#include <string_view>
 
 namespace engine::core {
     class Context;
 } // namespace engine::core
 
-namespace engine::object {
-    class GameObject;
-} // namespace engine::object
+namespace engine::ui {
+    class UIManager;
+} // namespace engine::ui
 
 namespace engine::scene {
 /**
@@ -43,24 +44,6 @@ public:
     virtual void render();                      ///< @brief 渲染场景。
     virtual void handle_input();                ///< @brief 处理输入。
 
-    /// @brief 直接向场景中添加一个游戏对象。（初始化时可用，游戏进行中不安全） （&&表示右值引用，与std::move搭配使用，避免拷贝）
-    virtual void add_game_object(std::unique_ptr<engine::object::GameObject>&& game_object);
-
-    /// @brief 安全地添加游戏对象。（添加到pending_additions_中）
-    virtual void safe_add_game_object(std::unique_ptr<engine::object::GameObject>&& game_object); 
-
-    /// @brief 直接从场景中移除一个游戏对象。（一般不使用，但保留实现的逻辑）
-    virtual void remove_game_object(engine::object::GameObject* game_object_ptr);
-
-    /// @brief 安全地移除游戏对象。（设置need_remove_标记）
-    virtual void safe_remove_game_object(engine::object::GameObject* game_object_ptr);
-
-    /// @brief 获取场景中的游戏对象容器。
-    const std::vector<std::unique_ptr<engine::object::GameObject>>& get_game_objects() const;
-
-    /// @brief 根据名称查找游戏对象（返回找到的第一个对象）。
-    engine::object::GameObject* find_game_object_by_name(std::string_view name) const;
-
     /// @brief 请求弹出当前场景
     void request_pop_scene();
 
@@ -76,18 +59,14 @@ public:
     // getters and setters
     void set_name(std::string_view name) { scene_name_ = name; }                ///< @brief 设置场景名称
     std::string_view get_name() const { return scene_name_; }                   ///< @brief 获取场景名称
+    entt::registry& get_registry() { return registry_; }                      ///< @brief 获取注册表引用
 
     engine::core::Context& get_context() const { return context_; }                                         ///< @brief 获取上下文引用
-    std::vector<std::unique_ptr<engine::object::GameObject>>& get_game_objects() { return game_objects_; }  ///< @brief 获取场景中的游戏对象
     
 protected:
-    void process_pending_additions();                               ///< @brief 处理待添加的游戏对象。（每轮更新的最后调用）
-
     std::string scene_name_;                                        ///< @brief 场景名称
     engine::core::Context& context_;                                ///< @brief 上下文引用（显式，构造时传入）
     std::unique_ptr<engine::ui::UIManager> ui_manager_ = nullptr;   ///< @brief UI管理器(初始化时自动创建)
-
-    std::vector<std::unique_ptr<engine::object::GameObject>> game_objects_;         ///< @brief 场景中的游戏对象
-    std::vector<std::unique_ptr<engine::object::GameObject>> pending_additions_;    ///< @brief 待添加的游戏对象（延时添加）
+    entt::registry registry_;                                       ///< @brief ECS 注册表
 };
 } // namespace engine::scene

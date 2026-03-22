@@ -21,34 +21,6 @@ Camera::Camera(sf::RenderWindow* window, std::optional<sf::FloatRect> limit_boun
     window_obs_->setView(world_view_);
 }
 
-void Camera::update(sf::Time delta_time) {
-    if (target_obs_ == nullptr) return;
-    
-    sf::Vector2f target_pos = target_obs_->get_position();
-    sf::Vector2f desired_center = target_pos;   // 目标位置就是期望的视图中心
-    sf::Vector2f current_center = world_view_.getCenter();
-    
-    // 计算当前位置与目标位置的距离
-    sf::Vector2f diff = desired_center - current_center;
-    float distance = diff.length();
-    constexpr float SNAP_THRESHOLD = 1.f; // 设置一个距离阈值
-    
-    sf::Vector2f new_center;
-    if (distance < SNAP_THRESHOLD) {
-        // 如果距离小于阈值，直接吸附到目标位置
-        new_center = desired_center;
-    } else {
-        // 使用线性插值平滑移动
-        float t = smooth_speed_ * delta_time.asSeconds();
-        t = std::min(t, 1.f); // 确保插值因子不超过1
-        
-        new_center = current_center + diff * t;        
-    }
-    
-    world_view_.setCenter(new_center);
-    clamp_position();
-}
-
 void Camera::set_world_view_center(sf::Vector2f center) {
     world_view_.setCenter(center);
     clamp_position();
