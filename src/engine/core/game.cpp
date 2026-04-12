@@ -35,7 +35,18 @@ Game::Game()
                                                      , *audio_player_
                                                      , *game_state_)}
     , scene_manager_{std::make_unique<engine::scene::SceneManager>(*context_)} {
-    resource_manager_->load_resource("assets/data/resource_mapping.json");  // 载入默认资源映射文件
+    // 根据缩放调整窗口大小
+    sf::Vector2u window_size = static_cast<sf::Vector2u>(static_cast<sf::Vector2f>(config_->window_size_) * config_->window_scale_);
+    window_->create(sf::VideoMode(window_size), config_->window_title_);
+
+    // 调整 view 到缩放后大小
+    camera_->set_world_view_size(static_cast<sf::Vector2f>(config_->window_size_));
+    camera_->set_ui_view_sizs(static_cast<sf::Vector2f>(config_->window_size_));
+    camera_->set_world_view_center(camera_->get_world_view_size() / 2.f);
+    camera_->set_ui_view_center(camera_->get_ui_view_size() / 2.f);
+    
+    // 加载初始资源（载入默认资源映射文件）
+    resource_manager_->load_resource("assets/data/resource_mapping.json");
         
     // 设置游戏音量（从 assets/config.json 里读取）
     audio_player_->set_music_volume(config_->music_volume_);    // 设置背景音乐音量

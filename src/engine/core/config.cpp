@@ -71,6 +71,7 @@ void Config::from_json(const nlohmann::json& json) {
         window_title_ = window_config.value("title", window_title_);
         window_size_.x = window_config.value("width", window_size_.x);
         window_size_.y = window_config.value("height", window_size_.y);
+        window_scale_ = window_config.value("window_scale", window_scale_);
         window_resizable_ = window_config.value("resizable", window_resizable_);
     }
     if (json.contains("graphics")) {
@@ -125,6 +126,7 @@ nlohmann::ordered_json Config::to_json() const {
             {"title", window_title_},
             {"width", window_size_.x},
             {"height", window_size_.y},
+            {"window_scale", window_scale_},
             {"resizable", window_resizable_}
         }},
         {"graphics", {

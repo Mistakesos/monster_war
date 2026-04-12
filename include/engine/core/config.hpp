@@ -36,6 +36,7 @@ public:
     // --- 默认配置 ---
     std::string window_title_ = "Monster War";
     sf::Vector2u window_size_ = {1280u, 720u};
+    float window_scale_ = 1.f;
     bool window_resizable_ = true;
 
     // 图形设置

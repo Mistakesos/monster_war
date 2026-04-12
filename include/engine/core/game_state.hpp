@@ -41,14 +41,13 @@ public:
     sf::Vector2f get_logical_size() const;
 
     // --- 便捷查询方法 ---
-
     bool is_in_title() const { return current_state_ == State::Title; }
     bool is_playing() const { return current_state_ == State::Playing; }
     bool is_paused() const { return current_state_ == State::Paused; }
     bool is_game_over() const { return current_state_ == State::GameOver; }
 
 private:    
-    sf::RenderWindow* window_obs_ = nullptr;              ///< @brief SDL窗口，用于获取窗口大小
+    sf::RenderWindow* window_obs_ = nullptr;              ///< @brief SFML 窗口，用于获取窗口大小
     State current_state_ = State::Title;        ///< @brief 当前游戏状态
 };
 } // namespace engine::core

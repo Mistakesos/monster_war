@@ -16,11 +16,7 @@ public:
     void render() override;
 
 private:
-    // --- 资源管理器 ---
-    void test_resource_manager();
-
-    // --- 测试 ECS
-    void test_ecs();
+    [[nodiscard]] bool load_level();
 
     std::unique_ptr<engine::system::RenderSystem> render_system_;
     std::unique_ptr<engine::system::MovementSystem> movement_system_;

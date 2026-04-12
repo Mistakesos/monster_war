@@ -13,7 +13,7 @@ struct SpriteComponent {
     SpriteComponent(const sf::Texture& texture)
         : sprite_{texture} {
     }
-    SpriteComponent(sf::Sprite& sprite)
+    SpriteComponent(const sf::Sprite& sprite)
         : sprite_{sprite} {
     }
 

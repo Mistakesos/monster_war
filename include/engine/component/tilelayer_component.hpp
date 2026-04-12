@@ -28,27 +28,24 @@ namespace engine::component {
  * @note 它只是辅助LevelLoader解析的临时数据，不会保存在游戏中。
  */
 struct TileInfo {
-
-    TileInfo() = default;
-
     TileInfo(const sf::Texture& texture, 
              engine::component::TileType type, 
              std::optional<engine::component::Animation> animation = std::nullopt, 
              std::optional<nlohmann::json> properties = std::nullopt)
-        : sprite_(texture)
-        , type_(type)
-        , animation_(std::move(animation))
-        , properties_(std::move(properties)) {
+        : sprite_{texture}
+        , type_{type}
+        , animation_{std::move(animation)}
+        , properties_{std::move(properties)} {
     }
 
     TileInfo(sf::Sprite& sprite, 
              engine::component::TileType type, 
              std::optional<engine::component::Animation> animation = std::nullopt, 
              std::optional<nlohmann::json> properties = std::nullopt)
-        : sprite_(std::move(sprite))
-        , type_(type)
-        , animation_(std::move(animation))
-        , properties_(std::move(properties)) {
+        : sprite_{std::move(sprite)}
+        , type_{type}
+        , animation_{std::move(animation)}
+        , properties_{std::move(properties)} {
     }
 
     sf::Sprite sprite_;                                     ///< @brief 精灵
@@ -71,9 +68,9 @@ struct TileLayerComponent {
     TileLayerComponent(sf::Vector2i tile_size, 
                        sf::Vector2i map_size, 
                        std::vector<entt::entity> tiles) : 
-                       tile_size_(std::move(tile_size)), 
-                       map_size_(std::move(map_size)),
-                       tiles_(std::move(tiles)) {
+                       tile_size_{std::move(tile_size)}, 
+                       map_size_{std::move(map_size)},
+                       tiles_{std::move(tiles)} {
     }
 
     sf::Vector2i tile_size_;              ///< @brief 瓦片大小

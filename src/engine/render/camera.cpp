@@ -13,10 +13,6 @@ Camera::Camera(sf::RenderWindow* window, std::optional<sf::FloatRect> limit_boun
     , ui_view_{window->getDefaultView()}
     , limit_bounds_{limit_bounds} {
     spdlog::trace("Camera 初始化成功");
-    world_view_.zoom(0.5f);
-    ui_view_.zoom(0.5f);
-    world_view_.setCenter(world_view_.getSize() / 2.f);
-    ui_view_.setCenter(ui_view_.getSize() / 2.f);
     
     window_obs_->setView(world_view_);
 }
@@ -73,8 +69,7 @@ void Camera::clamp_position() {
 }
 
 sf::Vector2f Camera::world_to_screen(const sf::Vector2f& world_pos) const {
-    // 将世界坐标减去相机左上角位置
-    return window_obs_->mapPixelToCoords(static_cast<sf::Vector2i>(world_pos));
+    return static_cast<sf::Vector2f>(window_obs_->mapCoordsToPixel(world_pos));
 }
 
 sf::Vector2f Camera::world_to_screen_with_parallax(const sf::Vector2f& world_pos, const sf::Vector2f& scroll_factor) const {
@@ -90,7 +85,6 @@ sf::Vector2f Camera::world_to_screen_with_parallax(const sf::Vector2f& world_pos
 }
 
 sf::Vector2f Camera::screen_to_world(const sf::Vector2f& screen_pos) const {
-    // 将屏幕坐标加上相机左上角位置
-    return static_cast<sf::Vector2f>(window_obs_->mapCoordsToPixel(screen_pos));
+    return window_obs_->mapPixelToCoords(static_cast<sf::Vector2i>(screen_pos));
 }
 } // namespace engine::render
