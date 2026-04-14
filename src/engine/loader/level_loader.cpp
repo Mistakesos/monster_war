@@ -8,6 +8,7 @@
 #include "engine/component/transform_component.hpp"
 #include "engine/component/parallax_component.hpp"
 #include "engine/render/render.hpp"
+#include "engine/utils/math.hpp"
 #include <filesystem>
 #include <fstream>
 #include <spdlog/spdlog.h>
@@ -56,6 +57,11 @@ bool LevelLoader::load_level(std::string_view level_path, engine::scene::Scene* 
     map_path_ = level_path;
     map_size_ = sf::Vector2i(json_data.value("width", 0), json_data.value("height", 0));
     tile_size_ = sf::Vector2i(json_data.value("tilewidth", 0), json_data.value("tileheight", 0));
+    if (json_data.contains("backgroundcolor")) {
+        auto color_string = json_data["backgroundcolor"].get<std::string>();
+        auto color = engine::utils::parse_hex_color(color_string);
+        scene_->get_context().get_renderer().set_bg_color(color);
+    }
 
     // 4. 加载 tileset 数据
     if (json_data.contains("tilesets") && json_data["tilesets"].is_array()) {

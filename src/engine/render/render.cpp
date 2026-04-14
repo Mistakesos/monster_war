@@ -24,7 +24,7 @@ Renderer::Renderer(sf::RenderWindow* window, engine::resource::ResourceManager* 
 }
 
 void Renderer::clear_frame() {
-    window_obs_->clear(sf::Color::Black);
+    window_obs_->clear(background_color_);
 }
 
 void Renderer::display_frame() {

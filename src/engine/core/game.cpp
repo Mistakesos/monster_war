@@ -111,11 +111,11 @@ void Game::update(sf::Time delta) {
 }
 
 void Game::render() {
-    window_->clear();
+    renderer_->clear_frame();
 
     scene_manager_->render();
 
-    window_->display();
+    renderer_->display_frame();
 }
 
 void engine::core::Game::on_quit_event() {

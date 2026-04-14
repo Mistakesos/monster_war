@@ -108,8 +108,15 @@ public:
      */
     void draw_ui_filled_rect(const Camera& camera, const sf::FloatRect& rect, sf::Color color);
 
+    /**
+     * @brief 设置窗口背景色
+     * @param color 具体颜色
+     */
+    void set_bg_color(sf::Color color) { background_color_ = color; }
+    
 private:
     sf::RenderWindow* window_obs_ = nullptr;                                    ///< @brief 窗口的观察者指针，不负责管理生命周期
     engine::resource::ResourceManager* resource_manager_obs_ = nullptr;         ///< @brief 资源管理器的观察者指针，不负责管理生命周期
+    sf::Color background_color_ = sf::Color::Black;                             ///< @brief 窗口背景色
 };
 } // namespace engine::render
