@@ -21,5 +21,6 @@ private:
     std::unique_ptr<engine::system::RenderSystem> render_system_;
     std::unique_ptr<engine::system::MovementSystem> movement_system_;
     std::unique_ptr<engine::system::AnimationSystem> animation_system_;
+    std::unique_ptr<engine::system::YSortSystem> ysort_system_;
 };
 }

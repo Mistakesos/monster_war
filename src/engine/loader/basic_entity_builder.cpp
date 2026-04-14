@@ -5,6 +5,7 @@
 #include "engine/component/name_component.hpp"
 #include "engine/component/sprite_component.hpp"
 #include "engine/component/transform_component.hpp"
+#include "engine/component/render_component.hpp"
 #include "engine/resource/resource_manager.hpp"
 #include <entt/entt.hpp>
 #include <spdlog/spdlog.h>
@@ -72,6 +73,7 @@ BasicEntityBuilder* BasicEntityBuilder::build() {
     build_base();
     build_sprite();
     build_transform();
+    build_render();
     build_animation();
     build_audio();
     return this;
@@ -130,6 +132,13 @@ void BasicEntityBuilder::build_transform() {
 
     // 添加 TransformComponent
     registry_.emplace<engine::component::TransformComponent>(entity_id_, position_, scale, sf::degrees(rotation));
+}
+
+void BasicEntityBuilder::build_render() {
+    spdlog::trace("构建Render组件");
+    int layer = level_loader_.get_current_layer ();     // 确定图层
+    float depth = position_.y;                          // 确定深度（默认y坐标）
+    registry_.emplace<engine::component::RenderComponent>(entity_id_, layer, depth);
 }
 
 void BasicEntityBuilder::build_animation() {

@@ -7,6 +7,7 @@
 #include "engine/component/sprite_component.hpp"
 #include "engine/component/transform_component.hpp"
 #include "engine/component/parallax_component.hpp"
+#include "engine/component/render_component.hpp"
 #include "engine/render/render.hpp"
 #include "engine/utils/math.hpp"
 #include <filesystem>
@@ -90,6 +91,16 @@ bool LevelLoader::load_level(std::string_view level_path, engine::scene::Scene* 
             continue;
         }
 
+        // 可以指定当前图层的序号（默认从0开始，每载入一个图层，序号加1），这个序号用于决定渲染顺序
+        if (layer_json.contains("properties")) {
+            auto& properties = layer_json["properties"];
+            for (auto& property : properties) {
+                if (property.contains("name") && property["name"] == "order") {
+                    current_layer_ = property["value"].get<int>();
+                }
+            }
+        }
+        
         // 根据图层类型决定加载方法
         if (layer_type == "imagelayer") {       
             load_image_layer(layer_json);
@@ -100,6 +111,8 @@ bool LevelLoader::load_level(std::string_view level_path, engine::scene::Scene* 
         } else {
             spdlog::warn("不支持的图层类型: {}", layer_type);
         }
+        spdlog::info("当前图层: {}, 图层ID: {}", layer_json.value("name", "Unnamed"), current_layer_);
+        current_layer_++;   // 每加载一个图层，图层ID加1
     }
 
     spdlog::info("关卡加载完成: {}", level_path);
@@ -146,6 +159,7 @@ void LevelLoader::load_image_layer(const nlohmann::json& layer_json) {
     registry.emplace<engine::component::TransformComponent>(entity, offset);
     registry.emplace<engine::component::ParallaxComponent>(entity, scroll_factor, repeat);
     registry.emplace<engine::component::SpriteComponent>(entity, sprite);
+    registry.emplace<engine::component::RenderComponent>(entity, current_layer_);
     /* 实体与组件创建完毕后即由registry自动管理，不需要“添加到场景”的步骤 */
 
     spdlog::info("加载图层: '{}' 完成", layer_name);

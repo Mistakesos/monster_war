@@ -2,19 +2,25 @@
 #include "engine/input/input_manager.hpp"
 #include "engine/resource/resource_manager.hpp"
 #include "engine/audio/audio_player.hpp"
+
 #include "engine/ui/ui_manager.hpp"
 #include "engine/ui/ui_image.hpp"
 #include "engine/ui/ui_label.hpp"
+
 #include "engine/component/transform_component.hpp"
 #include "engine/component/sprite_component.hpp"
 #include "engine/component/velocity_component.hpp"
 #include "engine/component/animation_component.hpp"
+
 #include "engine/system/render_system.hpp"
 #include "engine/system/movement_system.hpp"
 #include "engine/system/animation_system.hpp"
+#include "engine/system/ysort_system.hpp"
+
 #include "engine/loader/level_loader.hpp"
 #include "engine/core/context.hpp"
 #include "engine/utils/events.hpp"
+
 #include "entt/signal/sigh.hpp"
 #include "entt/signal/dispatcher.hpp"
 #include "entt/core/hashed_string.hpp"
@@ -27,7 +33,8 @@ GameScene::GameScene(engine::core::Context& context)
     : Scene{"GameScene", context}
     , render_system_{std::make_unique<engine::system::RenderSystem>()}
     , movement_system_{std::make_unique<engine::system::MovementSystem>()}
-    , animation_system_{std::make_unique<engine::system::AnimationSystem>()} {
+    , animation_system_{std::make_unique<engine::system::AnimationSystem>()}
+    , ysort_system_{std::make_unique<engine::system::YSortSystem>()} {
 
     if (!load_level()) {
         spdlog::error("加载关卡失败！");
@@ -52,6 +59,7 @@ bool GameScene::load_level() {
 void GameScene::update(sf::Time delta) {
     movement_system_->update(registry_, delta);
     animation_system_->update(registry_, delta);
+    ysort_system_->update(registry_);       // 确保在 MovementSystem 之后
 
     Scene::update(delta);
 }

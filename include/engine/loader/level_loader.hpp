@@ -46,6 +46,7 @@ public:
     // --- getters and setters ---
     const sf::Vector2i& get_map_size() const { return map_size_; }
     const sf::Vector2i& get_tile_size() const { return tile_size_; }
+    int get_current_layer() const { return current_layer_; }
     
 private:
     void load_image_layer(const nlohmann::json& layer_json);    ///< @brief 加载图片图层
@@ -139,7 +140,9 @@ private:
 
     std::unique_ptr<BasicEntityBuilder> entity_builder_;    ///< @brief 实体生成器(生成器模式)
 
-    engine::core::Context* context_obs_;                        ///< @brief 上下文引用，用于加载资源
+    int current_layer_ = 0;                                 ///< @brief 当前图层序号（用于RenderComponent，决定渲染顺序）
+    
+    engine::core::Context* context_obs_;                    ///< @brief 上下文引用，用于加载资源
 };
 
 } // namespace engine::loader

@@ -61,6 +61,7 @@ protected:
     void build_base();
     void build_sprite();
     void build_transform();
+    void build_render();
     void build_animation();
     void build_audio();
 
