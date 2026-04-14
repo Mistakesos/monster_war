@@ -121,15 +121,14 @@ void BasicEntityBuilder::build_transform() {
         if (tile_info_) {
             src_size_ = static_cast<sf::Vector2f>(tile_info_->texture_rect_->size);
             scale = dst_size_.componentWiseDiv(src_size_);
+            // 考虑翻转
+            if (tile_info_->is_flipped_horizontally_) {
+                // 原点设为右上角
+                origin = {static_cast<float>(tile_info_->texture_rect_->size.x), 0.f};
+                // 水平缩放为负即可水平翻转
+                scale = {-scale.x, scale.y};
+            }
         }
-    }
-
-    // 考虑翻转
-    if (tile_info_->is_flipped_horizontally_) {
-        // 原点设为右上角
-        origin = {static_cast<float>(tile_info_->texture_rect_->size.x), 0.f};
-        // 水平缩放为负即可水平翻转
-        scale = {-scale.x, scale.y};
     }
     
     // 瓦片层实体，通过index (Tiled瓦片层data数据的索引) 计算位置
