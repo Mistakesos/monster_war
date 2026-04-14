@@ -100,13 +100,15 @@ void BasicEntityBuilder::build_sprite() {
     spdlog::trace("构建Sprite组件");
     // 如果是自定义形状对象，则不需要SpriteComponent
     if (!tile_info_) return;
-    // 创建Sprite时纹理已经由 LevelLoader 加载
-    registry_.emplace<engine::component::SpriteComponent>(entity_id_, tile_info_->sprite_);
+    // 纹理已经由 LevelLoader 加载，这里直接解引用使用
+    sf::Sprite spr(*tile_info_->texture_, *tile_info_->texture_rect_);
+    registry_.emplace<engine::component::SpriteComponent>(entity_id_, spr);
 }
 
 void BasicEntityBuilder::build_transform() {
     spdlog::trace("构建Transform组件");
     sf::Vector2f scale = sf::Vector2f{1.f, 1.f};
+    sf::Vector2f origin = {0.f, 0.f};
     float rotation = 0.f;
     
     // 对象层实体，位置、尺寸和旋转信息从 object_json_ 中获取
@@ -117,11 +119,19 @@ void BasicEntityBuilder::build_transform() {
         rotation = object_json_->value("rotation", 0.f);
         // 如果是图片对象，需要调整缩放
         if (tile_info_) {
-            src_size_ = sf::Vector2f(tile_info_->sprite_.getTextureRect().size);
+            src_size_ = static_cast<sf::Vector2f>(tile_info_->texture_rect_->size);
             scale = dst_size_.componentWiseDiv(src_size_);
         }
     }
 
+    // 考虑翻转
+    if (tile_info_->is_flipped_horizontally_) {
+        // 原点设为右上角
+        origin = {static_cast<float>(tile_info_->texture_rect_->size.x), 0.f};
+        // 水平缩放为负即可水平翻转
+        scale = {-scale.x, scale.y};
+    }
+    
     // 瓦片层实体，通过index (Tiled瓦片层data数据的索引) 计算位置
     if (index_ >= 0) {
         auto map_size = level_loader_.get_map_size();
@@ -131,7 +141,7 @@ void BasicEntityBuilder::build_transform() {
     }
 
     // 添加 TransformComponent
-    registry_.emplace<engine::component::TransformComponent>(entity_id_, position_, scale, sf::degrees(rotation));
+    registry_.emplace<engine::component::TransformComponent>(entity_id_, position_, scale, sf::degrees(rotation), origin);
 }
 
 void BasicEntityBuilder::build_render() {

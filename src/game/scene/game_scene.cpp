@@ -49,7 +49,7 @@ GameScene::~GameScene() {
 bool GameScene::load_level() {
     engine::loader::LevelLoader level_loader{&context_};
     // 不调用setEntityBuilder，则使用默认的BasicEntityBuilder
-    if (!level_loader.load_level("assets/maps/level1.tmj", this)) {
+    if (!level_loader.load_level("assets/maps/title.tmj", this)) {
         spdlog::error("加载关卡失败");
         return false;
     }

@@ -24,31 +24,31 @@ namespace engine::component {
 };
 
 /**
- * @brief 瓦片信息，包含精灵、类型、动画和属性。
+ * @brief 瓦片信息，包含纹理引用、类型、动画和属性。
  * @note 它只是辅助LevelLoader解析的临时数据，不会保存在游戏中。
  */
 struct TileInfo {
-    TileInfo(const sf::Texture& texture, 
+    TileInfo(const sf::Texture* texture, 
              engine::component::TileType type, 
+             std::optional<sf::IntRect> texture_rect = std::nullopt,
+             bool is_flipped_horizontally = false,
              std::optional<engine::component::Animation> animation = std::nullopt, 
              std::optional<nlohmann::json> properties = std::nullopt)
-        : sprite_{texture}
+        : texture_{texture}
+        , texture_rect_{texture_rect}
+        , is_flipped_horizontally_{is_flipped_horizontally}
         , type_{type}
         , animation_{std::move(animation)}
         , properties_{std::move(properties)} {
+        // 如果 texture_rect 仍然为空，默认值应该为 texture_ 大小
+        if(!texture_rect_) {
+            texture_rect_ = sf::IntRect{{0, 0}, static_cast<sf::Vector2i>(texture_->getSize())};
+        }
     }
 
-    TileInfo(sf::Sprite& sprite, 
-             engine::component::TileType type, 
-             std::optional<engine::component::Animation> animation = std::nullopt, 
-             std::optional<nlohmann::json> properties = std::nullopt)
-        : sprite_{std::move(sprite)}
-        , type_{type}
-        , animation_{std::move(animation)}
-        , properties_{std::move(properties)} {
-    }
-
-    sf::Sprite sprite_;                                     ///< @brief 精灵
+    const sf::Texture* texture_;                            ///< @brief 需要加载的纹理引用
+    std::optional<sf::IntRect> texture_rect_;               ///< @brief 需要的区域
+    bool is_flipped_horizontally_ = false;                  ///< @biref 水平翻转标识，默认为不翻转
     engine::component::TileType type_;                      ///< @brief 类型
     std::optional<engine::component::Animation> animation_; ///< @brief 动画（支持Tiled动画图块）
     std::optional<nlohmann::json> properties_;              ///< @brief 属性（存放自定义属性，方便LevelLoader解析）

@@ -321,6 +321,19 @@ std::optional<engine::component::TileInfo> LevelLoader::get_tile_info_by_gid(int
         return std::nullopt;
     }
 
+    // 判断并存储是否水平翻转 (最高的第32位为1)
+    bool is_flipped_horizontally = gid & 0x80000000;
+    /* 未来可添加其它翻转支持
+        // 判断垂直翻转 (最高的第31位为1)
+        bool is_flipped_vertically = gid & 0x40000000;
+        // 判断对角线翻转 (最高的第30位为1)
+        bool is_flipped_diagonally = gid & 0x20000000;
+    */
+
+    // 还原gid的实际值 (最高的三个标志位置为0，而其余位全为1。这个掩码的十六进制表示为 0x1FFFFFFF。)
+    gid = gid & 0x1FFFFFFF;
+
+    
     // upper_bound：查找tileset_data_中键大于 gid 的第一个元素，返回迭代器
     auto tileset_it = tileset_data_.upper_bound(gid);
     if (tileset_it == tileset_data_.begin()) {
@@ -337,9 +350,9 @@ std::optional<engine::component::TileInfo> LevelLoader::get_tile_info_by_gid(int
         return std::nullopt;
     }
 
-    auto default_texture = sf::Texture();                                       // 默认材质为空
-    auto default_tile_type = engine::component::TileType::NORMAL;               // 默认瓦片类型为普通
-    engine::component::TileInfo tile_info{default_texture, default_tile_type};  // 初始化瓦片信息
+    auto default_texture = sf::Texture();                                        // 默认纹理为空
+    auto default_tile_type = engine::component::TileType::NORMAL;                // 默认瓦片类型为普通
+    engine::component::TileInfo tile_info{&default_texture, default_tile_type};  // 初始化瓦片信息
     // 图块集分为两种情况，用一个标志进行记录区分
     bool is_single_image = false;
     if (tileset.contains("image")) {    // 这是单一图片的情况
@@ -348,9 +361,11 @@ std::optional<engine::component::TileInfo> LevelLoader::get_tile_info_by_gid(int
         auto image_path = tileset["image"].get<std::string>();
         // 计算纹理绝对路径
         auto texture_path = resolve_path(image_path, file_path);
-        // 创建精灵
+        // 加载纹理，考虑翻转信息
         auto texture = context_obs_->get_resource_manager().load_texture(entt::hashed_string(texture_path.c_str()), texture_path);
-        tile_info.sprite_ = sf::Sprite{*texture, texture_rect};
+        tile_info.texture_ = texture;
+        tile_info.texture_rect_ = texture_rect;
+        tile_info.is_flipped_horizontally_ = is_flipped_horizontally;
         tile_info.type_ = get_tile_type_by_id(tileset, local_id);   // 获取瓦片类型（只有瓦片id，还没找具体瓦片json）
         is_single_image = true;
     } 
@@ -381,8 +396,13 @@ std::optional<engine::component::TileInfo> LevelLoader::get_tile_info_by_gid(int
                     sf::Vector2i(tile_json.value("x", 0.0f), tile_json.value("y", 0.0f)),
                     sf::Vector2i(tile_json.value("width", image_width), tile_json.value("height", image_height))
                 };
+
+                // 加载对应纹理，配置 tile_info 相关参数
                 auto texture = context_obs_->get_resource_manager().load_texture(entt::hashed_string(texture_path.c_str()), texture_path);
-                tile_info.sprite_ = sf::Sprite{*texture, texture_rect};
+                tile_info.texture_ = texture;
+                tile_info.texture_rect_ = texture_rect;
+                tile_info.is_flipped_horizontally_ = is_flipped_horizontally;
+
                 scene_->get_context().get_resource_manager().load_texture(entt::hashed_string(texture_path.c_str()), texture_path);  // 确保纹理被加载
                 tile_info.type_ = get_tile_type(tile_json);    // 获取瓦片类型（已经有具体瓦片json了）
             }
