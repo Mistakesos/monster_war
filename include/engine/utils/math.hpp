@@ -1,5 +1,6 @@
 #include <SFML/Graphics/Color.hpp>
 #include <string_view>
+#include <random>
 #include <cstdint>
 #include <charconv>
 #include <spdlog/spdlog.h>
@@ -31,6 +32,11 @@ inline sf::Color parse_hex_color(std::string_view hex_str) {
     }
 
     return sf::Color(value);
+}
+
+inline int range_random(int min_num, int max_num) {
+    static thread_local std::mt19937 gen{std::random_device{}()};
+    return std::uniform_int_distribution<int>(min_num, max_num)(gen);
 }
 
 } // namespace engine::utils

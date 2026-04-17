@@ -43,6 +43,8 @@ file(GLOB_RECURSE SRC_LIST CMAKE_CONFIGURE_DEPENDS
     ${PROJECT_SOURCE_DIR}/src/engine/ui/*.cpp
     ${PROJECT_SOURCE_DIR}/src/engine/ui/state/*.cpp
     ${PROJECT_SOURCE_DIR}/src/game/scene/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/game/loader/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/game/system/*.cpp
 )
 
 # 生成可执行文件，这里的所有cpp文件用变量替代

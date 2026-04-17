@@ -12,7 +12,7 @@ void MovementSystem::update(entt::registry& registry, sf::Time delta) {
 
     // 遍历获取的实体，获取组件并执行相关逻辑
     for (auto&& [entity, velocity, transform] : view.each()) {
-        transform.position_ += velocity.velocity_ * static_cast<float>(delta.asSeconds());
+        transform.position_ += velocity.velocity_ * delta.asSeconds();
     }
 }
 
