@@ -2,19 +2,27 @@
 #include "engine/component/transform_component.hpp"
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Time.hpp>
+#include <entt/signal/dispatcher.hpp>
 #include <spdlog/spdlog.h>
 #include <algorithm>
 #include <cmath>
 
 namespace engine::render {
-Camera::Camera(sf::RenderWindow* window, std::optional<sf::FloatRect> limit_bounds)
+Camera::Camera(sf::RenderWindow* window, entt::dispatcher* dispatcher, std::optional<sf::FloatRect> limit_bounds)
     : window_obs_{window}
+    , dispatcher_obs_{dispatcher}
     , world_view_{window->getDefaultView()}
     , ui_view_{window->getDefaultView()}
     , limit_bounds_{limit_bounds} {
     spdlog::trace("Camera 初始化成功");
+
+    dispatcher->sink<engine::utils::WindowResizedEvent>().connect<&Camera::on_resize>(this);
     
     window_obs_->setView(world_view_);
+}
+
+Camera::~Camera() {
+    dispatcher_obs_->disconnect(this);
 }
 
 void Camera::set_world_view_center(sf::Vector2f center) {
@@ -66,6 +74,36 @@ void Camera::clamp_position() {
         
         world_view_.setCenter(current_center);
     }
+}
+
+void Camera::on_resize(const engine::utils::WindowResizedEvent& event) {
+    apply_letterbox(event.window_size);
+}
+
+void Camera::apply_letterbox(sf::Vector2u window_size) {
+    auto fix_view = [&](sf::View& view) {
+
+        float window_ratio = static_cast<float>(window_size.x) / static_cast<float>(window_size.y);
+        float view_ratio = view.getSize().x / view.getSize().y;
+
+        float size_x = 1.f, size_y = 1.f;
+        float pos_x = 0.f, pos_y = 0.f;
+
+        if (window_ratio > view_ratio) {
+            // 左右黑边
+            size_x = view_ratio / window_ratio;
+            pos_x = (1.f - size_x) / 2.f;
+        } else {
+            // 上下黑边
+            size_y = window_ratio / view_ratio;
+            pos_y = (1.f - size_y) / 2.f;
+        }
+
+        view.setViewport({{pos_x, pos_y}, {size_x, size_y}});
+    };
+
+    fix_view(world_view_);
+    fix_view(ui_view_);
 }
 
 sf::Vector2f Camera::world_to_screen(const sf::Vector2f& world_pos) const {

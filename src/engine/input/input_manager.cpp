@@ -97,13 +97,18 @@ void InputManager::end_frame() {
 // === 内部工具 ===
 
 void InputManager::toggle_fullscreen() {
+    
     if (is_full_screen_) {
-        window_obs_->create(sf::VideoMode(config_obs_->window_size_), config_obs_->window_title_, sf::State::Windowed);
+        // 根据缩放调整窗口大小
+        sf::Vector2u window_size = static_cast<sf::Vector2u>(static_cast<sf::Vector2f>(config_obs_->window_size_) * config_obs_->window_scale_);
+        window_obs_->create(sf::VideoMode(window_size), config_obs_->window_title_, sf::State::Windowed);
     } else {
         window_obs_->create(sf::VideoMode::getDesktopMode(), config_obs_->window_title_, sf::State::Fullscreen);
     }
 
     is_full_screen_ = !is_full_screen_;
+
+    dispatcher_->trigger<engine::utils::WindowResizedEvent>(engine::utils::WindowResizedEvent(window_obs_->getSize()));
 }
 
 // === 查询接口 ===

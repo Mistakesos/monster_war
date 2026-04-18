@@ -1,8 +1,9 @@
 #pragma once
-
+#include "engine/utils/events.hpp"
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Graphics/View.hpp>
 #include <SFML/Graphics/Rect.hpp>
+#include <entt/signal/fwd.hpp>
 #include <optional>
 
 namespace sf {
@@ -24,7 +25,8 @@ public:
      * @param position 相机位置
      * @param limit_bounds 限制相机的移动范围
      */
-    Camera(sf::RenderWindow* window, std::optional<sf::FloatRect> limit_bounds = std::nullopt);
+    Camera(sf::RenderWindow* window, entt::dispatcher* dispatcher,std::optional<sf::FloatRect> limit_bounds = std::nullopt);
+    ~Camera();
     
     void move(const sf::Vector2f& offset);                                  ///< @brief 移动相机
 
@@ -60,8 +62,11 @@ public:
 
 private:
     void clamp_position();                                          ///< @brief 限制相机位置在边界内
+    void on_resize(const engine::utils::WindowResizedEvent& event); ///< @brief 窗口大小发生变化时的回调函数
+    void apply_letterbox(sf::Vector2u window_size);                 ///< @brief 应用窗口变化后的 viewport 保持比例不变
 
     sf::RenderWindow* window_obs_;                                  ///< @brief 窗口的观察者指针，不管理其生命周期
+    entt::dispatcher* dispatcher_obs_;                              ///< @brief dispatcher 观察指针，不管理其生命周期
     sf::View world_view_;                                           ///< @brief world（世界）摄像机
     sf::View ui_view_;                                              ///< @brief ui（界面）摄像机
     std::optional<sf::FloatRect> limit_bounds_;                     ///< @brief 限制相机的移动范围，空值表示不限制

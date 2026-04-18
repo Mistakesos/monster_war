@@ -4,8 +4,9 @@
 #include "entt/signal/fwd.hpp"
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
-#include <SFML/System/Vector2.hpp>
 #include <SFML/Window/Event.hpp>
+#include <SFML/Graphics/View.hpp>
+#include <SFML/System/Vector2.hpp>
 #include <unordered_map>
 #include <vector>
 #include <variant>

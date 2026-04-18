@@ -24,7 +24,7 @@ Game::Game()
     , resource_manager_{std::make_unique<engine::resource::ResourceManager>()}
     , input_manager_{std::make_unique<engine::input::InputManager>(window_.get(), config_.get(), dispatcher_.get())}
     , renderer_{std::make_unique<engine::render::Renderer>(window_.get(), resource_manager_.get())}
-    , camera_{std::make_unique<engine::render::Camera>(window_.get())}
+    , camera_{std::make_unique<engine::render::Camera>(window_.get(), dispatcher_.get())}
     , audio_player_{std::make_unique<engine::audio::AudioPlayer>(resource_manager_.get())}
     , game_state_{std::make_unique<engine::core::GameState>(window_.get())}
     , context_{std::make_unique<engine::core::Context>(*dispatcher_
