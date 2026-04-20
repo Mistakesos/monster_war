@@ -252,7 +252,7 @@ struct WindowContext
     ImGuiMouseCursor lastCursor{ImGuiMouseCursor_COUNT};
 
     bool         touchDown[3] = {false};
-    sf::Vector2i touchPos;
+    sf::Vector2i touchPos[3];  // Cache touch positions for each finger
 
     unsigned int joystickId{getConnectedJoystickId()};
     ImGuiKey     joystickMapping[sf::Joystick::ButtonCount] = {ImGuiKey_None};
@@ -396,13 +396,26 @@ void ProcessEvent(const sf::Window& window, const sf::Event& event)
         else if (const auto* touchBegan = event.getIf<sf::Event::TouchBegan>())
         {
             s_currWindowCtx->mouseMoved = false;
-            const unsigned int button   = touchBegan->finger;
-            if (button < 3)
-                s_currWindowCtx->touchDown[touchBegan->finger] = true;
+            const unsigned int finger   = touchBegan->finger;
+            if (finger < 3)
+            {
+                s_currWindowCtx->touchDown[finger] = true;
+                s_currWindowCtx->touchPos[finger] = touchBegan->position;
+            }
         }
-        else if (event.is<sf::Event::TouchEnded>())
+        else if (const auto* touchMoved = event.getIf<sf::Event::TouchMoved>())
         {
             s_currWindowCtx->mouseMoved = false;
+            const unsigned int finger = touchMoved->finger;
+            if (finger < 3)
+                s_currWindowCtx->touchPos[finger] = touchMoved->position;
+        }
+        else if (const auto* touchEnded = event.getIf<sf::Event::TouchEnded>())
+        {
+            s_currWindowCtx->mouseMoved = false;
+            const unsigned int finger = touchEnded->finger;
+            if (finger < 3)
+                s_currWindowCtx->touchDown[finger] = false;
         }
         else if (const auto* mouseWheelScrolled = event.getIf<sf::Event::MouseWheelScrolled>())
         {
@@ -496,10 +509,11 @@ void Update(sf::Window& window, sf::RenderTarget& target, sf::Time dt)
 
     if (!s_currWindowCtx->mouseMoved)
     {
-        if (sf::Touch::isDown(0))
-            s_currWindowCtx->touchPos = sf::Touch::getPosition(0, window);
-
-        Update(s_currWindowCtx->touchPos, sf::Vector2f(target.getSize()), dt);
+        // Use cached touch position for finger 0 if it's currently down
+        if (s_currWindowCtx->touchDown[0])
+            Update(s_currWindowCtx->touchPos[0], sf::Vector2f(target.getSize()), dt);
+        else
+            Update(sf::Mouse::getPosition(window), sf::Vector2f(target.getSize()), dt);
     }
     else
     {
@@ -527,8 +541,9 @@ void Update(const sf::Vector2i& mousePos, const sf::Vector2f& displaySize, sf::T
         }
         for (unsigned int i = 0; i < 3; i++)
         {
-            io.MouseDown[i] = s_currWindowCtx->touchDown[i] || sf::Touch::isDown(i) ||
-                              s_currWindowCtx->mousePressed[i] || sf::Mouse::isButtonPressed((sf::Mouse::Button)i);
+            io.MouseDown[i] = s_currWindowCtx->touchDown[i] ||
+                              s_currWindowCtx->mousePressed[i] ||
+                              sf::Mouse::isButtonPressed(static_cast<sf::Mouse::Button>(i));
             s_currWindowCtx->mousePressed[i] = false;
             s_currWindowCtx->touchDown[i]    = false;
         }
@@ -754,7 +769,7 @@ void SetRStickYAxis(sf::Joystick::Axis rStickYAxis, bool inverted)
 void SetLTriggerAxis(sf::Joystick::Axis lTriggerAxis)
 {
     assert(s_currWindowCtx);
-    s_currWindowCtx->rTriggerInfo.axis = lTriggerAxis;
+    s_currWindowCtx->lTriggerInfo.axis = lTriggerAxis;
 }
 
 void SetRTriggerAxis(sf::Joystick::Axis rTriggerAxis)
@@ -911,7 +926,9 @@ void SetupRenderState(ImDrawData* draw_data, int fb_width, int fb_height)
     glEnableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
     glEnable(GL_TEXTURE_2D);
+#ifndef GL_VERSION_ES_CL_1_1
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+#endif
     glShadeModel(GL_SMOOTH);
     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
@@ -967,8 +984,12 @@ void RenderDrawLists(ImDrawData* draw_data)
     // Backup GL state
     GLint last_texture = 0;
     glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+
+#ifndef GL_VERSION_ES_CL_1_1
     GLint last_polygon_mode[2];
     glGetIntegerv(GL_POLYGON_MODE, last_polygon_mode);
+#endif
+
     GLint last_viewport[4];
     glGetIntegerv(GL_VIEWPORT, last_viewport);
     GLint last_scissor_box[4];
@@ -1031,7 +1052,7 @@ void RenderDrawLists(ImDrawData* draw_data)
                 clip_rect.w = (pcmd->ClipRect.w - clip_off.y) * clip_scale.y;
 
                 if (clip_rect.x < static_cast<float>(fb_width) && clip_rect.y < static_cast<float>(fb_height) &&
-                    clip_rect.z >= 0.0f && clip_rect.w >= 0.0f)
+                    clip_rect.z - clip_rect.x >= 0.0f && clip_rect.w - clip_rect.y >= 0.0f)
                 {
                     // Apply scissor/clipping rectangle
                     glScissor((int)clip_rect.x,
@@ -1040,7 +1061,7 @@ void RenderDrawLists(ImDrawData* draw_data)
                               (int)(clip_rect.w - clip_rect.y));
 
                     // Bind texture, Draw
-                    const GLuint textureHandle = convertImTextureIDToGLTextureHandle(pcmd->TextureId);
+                    const GLuint textureHandle = convertImTextureIDToGLTextureHandle(pcmd->GetTexID());
                     glBindTexture(GL_TEXTURE_2D, textureHandle);
                     glDrawElements(GL_TRIANGLES,
                                    (GLsizei)pcmd->ElemCount,
@@ -1060,9 +1081,13 @@ void RenderDrawLists(ImDrawData* draw_data)
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
+
+#ifndef GL_VERSION_ES_CL_1_1
     glPopAttrib();
     glPolygonMode(GL_FRONT, (GLenum)last_polygon_mode[0]);
     glPolygonMode(GL_BACK, (GLenum)last_polygon_mode[1]);
+#endif
+
     glViewport(last_viewport[0], last_viewport[1], (GLsizei)last_viewport[2], (GLsizei)last_viewport[3]);
     glScissor(last_scissor_box[0], last_scissor_box[1], (GLsizei)last_scissor_box[2], (GLsizei)last_scissor_box[3]);
     glShadeModel((GLenum)last_shade_model);
