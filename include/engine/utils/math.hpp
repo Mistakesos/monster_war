@@ -6,6 +6,10 @@
 #include <spdlog/spdlog.h>
 
 namespace engine::utils {
+/**
+ * @brief 处理 16 进制颜色
+ * @return sf::Color
+ */
 inline sf::Color parse_hex_color(std::string_view hex_str) {
     // 去掉可选的 '#' 前缀 (C++20 starts_with 自带空串安全检查)
     if (hex_str.starts_with('#')) {
@@ -34,9 +38,27 @@ inline sf::Color parse_hex_color(std::string_view hex_str) {
     return sf::Color(value);
 }
 
+/**
+ * @brief 生成指定范围内的随机整数 [min, max]
+ * @param min 最小值（包含）
+ * @param max 最大值（包含）
+ * @return 随机整数
+ */
 inline int range_random(int min_num, int max_num) {
     static thread_local std::mt19937 gen{std::random_device{}()};
     return std::uniform_int_distribution<int>(min_num, max_num)(gen);
+}
+
+/**
+ * @brief 根据等级和稀有度修改属性
+ * @param base 基础属性
+ * @param level 等级
+ * @param rarity 稀有度
+ * @return 修改后的属性
+ */
+inline float stat_modify(float base, int level = 1, int rarity = 1) {
+    return base * (0.95f + 0.05f * level) * (0.9f + 0.1f * rarity);
+    // NOTE: 未来可改成数据驱动方便调整
 }
 
 } // namespace engine::utils
