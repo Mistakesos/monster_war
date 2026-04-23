@@ -23,6 +23,8 @@
 
 #include "engine/loader/level_loader.hpp"
 #include "game/loader/entity_builder_mw.hpp"
+#include "game/factory/blueprint_manager.hpp"
+#include "game/factory/entity_factory.hpp"
 #include "engine/core/context.hpp"
 #include "engine/utils/events.hpp"
 
@@ -49,6 +51,11 @@ GameScene::GameScene(engine::core::Context& context)
     
     if (!init_event_connections()) {
         spdlog::error("初始化事件连接失败");
+        return;
+    }
+
+    if (!init_entity_factory()) {
+        spdlog::error("初始化实体工厂失败");
         return;
     }
 
@@ -87,27 +94,34 @@ bool GameScene::init_event_connections() {
     return true;
 }
 
+bool GameScene::init_entity_factory() {
+    // 如果蓝图管理器为空，则创建一个（将来可能由构造函数传入）
+    if (!blueprint_manager_) {  
+        blueprint_manager_ = std::make_shared<game::factory::BlueprintManager>(context_.get_resource_manager());
+        if (!blueprint_manager_->load_enemy_class_blueprints("assets/data/enemy_data.json")) {
+            spdlog::error("加载蓝图失败");
+            return false;
+        }
+    }
+    entity_factory_ = std::make_unique<game::factory::EntityFactory>(registry_, *blueprint_manager_);
+    spdlog::info("entity_factory_ 加载完成");
+    return true;
+}
+
 void GameScene::on_enemy_arrive_home(const game::defs::EnemyArriveHomeEvent&) {
     spdlog::info("敌人到达基地");
     // TODO: 添加敌人到达基地的逻辑
 }
 
 void GameScene::create_test_enemy() {
-    // 每个起点创建一个敌人
+    // 每个起点创建一批敌人
     for (auto start_index : start_points_) {
         auto position = waypoint_nodes_[start_index].position_;
 
-        auto enemy = registry_.create();
-        registry_.emplace<engine::component::TransformComponent>(enemy, position, sf::Vector2f(1.f, 1.f), sf::degrees(0), sf::Vector2f(96.f, 128.f));
-        registry_.emplace<engine::component::VelocityComponent>(enemy, sf::Vector2f(0.f, 0.f));
-        registry_.emplace<game::component::EnemyComponent>(enemy, start_index, 100.0f);
-
-        auto texture = context_.get_resource_manager().load_texture("assets/textures/Enemy/wolf.png");
-        auto sprite = sf::Sprite(*texture, sf::IntRect{{0, 0}, {192, 192}});
-        // 设置精灵组件时，需设置偏移量以调整中心点位置(否则会默认以左上角为中心点)
-        registry_.emplace<engine::component::SpriteComponent>(enemy, std::move(sprite));
-        // 暂定主战斗图层编号为10
-        registry_.emplace<engine::component::RenderComponent>(enemy, 10);
+        entity_factory_->create_enemy_unit("wolf"_hs, position, start_index);
+        entity_factory_->create_enemy_unit("slime"_hs, position, start_index);
+        entity_factory_->create_enemy_unit("goblin"_hs, position, start_index);
+        entity_factory_->create_enemy_unit("dark_witch"_hs, position, start_index);
     }
 }
 

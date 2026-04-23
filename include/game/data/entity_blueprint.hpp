@@ -1,0 +1,68 @@
+#pragma once
+#include <SFML/Graphics/Rect.hpp>
+#include <SFML/System/Vector2.hpp>
+#include <SFML/System/Time.hpp>
+#include <entt/entity/entity.hpp>
+#include <string>
+#include <vector>
+#include <unordered_map>
+
+/* 蓝图结构体，为实体工厂提供数据 */
+namespace game::data {
+
+/// @brief 属性蓝图, 用于创建属性组件
+struct StatsBlueprint {
+    float hp_{0.f};
+    float atk_{0.f};
+    float def_{0.f};
+    float range_{0.f};
+    sf::Time atk_interval_{};
+};
+
+/// @brief 精灵蓝图, 用于创建精灵组件
+struct SpriteBlueprint {
+    entt::id_type id_{entt::null};
+    std::string path_;
+    sf::FloatRect src_rect_{};
+    sf::Vector2f size_{};
+    sf::Vector2f origin_{};
+    bool face_right_{true};     ///< @brief 角色图片默认朝右，如果朝左就设置为false
+};
+
+/// @brief 单一动画的蓝图，多个蓝图构成的关联容器即可用于创建动画组件
+struct AnimationBlueprint {
+    sf::Time frame_duration_{}; ///< @brief 帧持续时间毫秒为单位
+    int row_{0};
+    std::vector<int> frames_;   ///< @brief 动画帧索引数组
+};
+
+/// @brief 声音蓝图, 用于创建声音组件
+struct SoundBlueprint {
+    std::unordered_map<entt::id_type, entt::id_type> sounds_;
+};
+
+/// @brief 敌人蓝图, 用于创建敌人组件（EnemyComponent）
+struct EnemyBlueprint {
+    bool ranged_{false};
+    float speed_{0.f};
+};
+
+/// @brief 显示信息蓝图, 可用于查找对应职业的名称和描述
+struct DisplayInfoBlueprint {
+    std::string name_;
+    std::string description_;
+};
+
+/// @brief 敌人类型蓝图, 包含所有必要的子蓝图，用于创建敌人实体中的所有组件
+struct EnemyClassBlueprint {
+    entt::id_type class_id_{entt::null};
+    std::string class_name_;
+    StatsBlueprint stats_{};
+    EnemyBlueprint enemy_{};
+    SoundBlueprint sounds_{};
+    SpriteBlueprint sprite_{};
+    DisplayInfoBlueprint display_info_{};
+    std::unordered_map<entt::id_type, AnimationBlueprint> animations_;
+};
+
+}   // namespace game::data

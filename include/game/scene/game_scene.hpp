@@ -6,6 +6,11 @@
 #include "game/defs/events.hpp"
 #include <memory>
 
+namespace game::factory {
+    class EntityFactory;
+    class BlueprintManager;
+} // namespace game::factory
+
 namespace game::scene {
 /**
  * @brief 主要的游戏场景，包含玩家、敌人、关卡元素等
@@ -21,6 +26,7 @@ public:
 private:
     [[nodiscard]] bool load_level();
     [[nodiscard]] bool init_event_connections();
+    [[nodiscard]] bool init_entity_factory();
 
     // 事件回调函数
     void on_enemy_arrive_home(const game::defs::EnemyArriveHomeEvent& event);
@@ -38,5 +44,10 @@ private:
 
     std::unordered_map<int, game::data::WaypointNode> waypoint_nodes_;  // 路径节点ID到节点数据的映射
     std::vector<int> start_points_;                                     // 起点ID列表
+
+    std::unique_ptr<game::factory::EntityFactory> entity_factory_;      // 实体工厂，负责创建和管理实体
+
+    // 管理数据的实例很可能同时被多个场景使用，因此使用共享指针
+    std::shared_ptr<game::factory::BlueprintManager> blueprint_manager_;// 蓝图管理器，负责管理蓝图数据
 };
 }
