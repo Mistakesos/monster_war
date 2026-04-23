@@ -11,6 +11,7 @@ Scene::Scene(std::string_view name, engine::core::Context& context)
     : scene_name_{name}
     , context_{context}
     , ui_manager_{std::make_unique<ui::UIManager>(context_.get_game_state().get_logical_size())} {
+    registry_.ctx().emplace<engine::resource::ResourceManager*>(&context_.get_resource_manager());
     spdlog::trace("场景 ‘{}’ 初始化完成", scene_name_);
 }
 

@@ -59,7 +59,7 @@ public:
     // getters and setters
     void set_name(std::string_view name) { scene_name_ = name; }                ///< @brief 设置场景名称
     std::string_view get_name() const { return scene_name_; }                   ///< @brief 获取场景名称
-    entt::registry& get_registry() { return registry_; }                      ///< @brief 获取注册表引用
+    entt::registry& get_registry() { return registry_; }                        ///< @brief 获取注册表引用
 
     engine::core::Context& get_context() const { return context_; }                                         ///< @brief 获取上下文引用
     
