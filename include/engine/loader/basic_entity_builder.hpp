@@ -20,24 +20,6 @@ namespace engine::loader {
  * 子类可以继承并添加新的buildXXX方法，以实现更多功能
  */
 class BasicEntityBuilder {
-protected:
-
-    engine::loader::LevelLoader& level_loader_;
-    engine::core::Context& context_;
-    entt::registry& registry_;
-    
-
-    // 解析游戏对象所需要的关键信息
-    const nlohmann::json* object_json_ = nullptr;               ///< @brief 来自.tmj地图文件的对象数据
-    const engine::component::TileInfo* tile_info_ = nullptr;    ///< @brief 来自.tsj的瓦片数据
-    int index_ = -1;                                            ///< @brief 瓦片索引，用于计算位置（瓦片层）
-
-    // --- 保存会多次用到的变量，避免重复解析 ---
-    entt::entity entity_id_;
-    sf::Vector2f position_;
-    sf::Vector2f dst_size_;
-    sf::Vector2f src_size_;
-
 public:
     BasicEntityBuilder(engine::loader::LevelLoader& level_loader, engine::core::Context& context, entt::registry& registry);
     virtual ~BasicEntityBuilder();
@@ -68,6 +50,21 @@ protected:
     // --- 代理函数，让子类能获取到LevelLoader的私有方法 ---
     template<typename T>
     std::optional<T> get_tile_property(const nlohmann::json& tile_json, std::string_view property_name);
+
+    engine::loader::LevelLoader& level_loader_;
+    engine::core::Context& context_;
+    entt::registry& registry_;
+    
+    // 解析游戏对象所需要的关键信息
+    const nlohmann::json* object_json_ = nullptr;               ///< @brief 来自.tmj地图文件的对象数据
+    const engine::component::TileInfo* tile_info_ = nullptr;    ///< @brief 来自.tsj的瓦片数据
+    int index_ = -1;                                            ///< @brief 瓦片索引，用于计算位置（瓦片层）
+
+    // --- 保存会多次用到的变量，避免重复解析 ---
+    entt::entity entity_id_;
+    sf::Vector2f position_;
+    sf::Vector2f dst_size_;
+    sf::Vector2f src_size_;
 };
 
 } // namespace engine::loader
