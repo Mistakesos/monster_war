@@ -16,8 +16,8 @@
         "face_right": true,
         "width": 192,
         "height": 192,
-        "offset_x": -96,
-        "offset_y": -128,
+        "origin_x": 96,
+        "origin_y": 128,
         "animation": {
             "idle": {"row":0, "frames":[0,1,2,3,4,5,6,7]},
             "guard":{"row":1, "frames":[0,1,2,3,4,5]},
@@ -45,8 +45,8 @@
         "face_right": true,
         "width": 192,
         "height": 192,
-        "offset_x": -96,
-        "offset_y": -128,
+        "origin_x": 96,
+        "origin_y": 128,
         "animation": {
             "idle": {"row":0, "frames":[0,1,2,3,4,5]},
             "attack":{"row":1, "frames":[0,1,2,3,4,5,6,7], "events": {"emit": 5}}
@@ -72,8 +72,8 @@
         "face_right": true,
         "width": 320,
         "height": 320,
-        "offset_x": -160,
-        "offset_y": -192,
+        "origin_x": 160,
+        "origin_y": 192,
         "animation": {
             "idle": {"row":0, "frames":[0,1,2,3,4,5,6,7,8,9,10,11]},
             "attack": {"row":1, "frames":[0,1,2], "events": {"hit": 1}}
@@ -99,8 +99,8 @@
         "face_right": false,
         "width": 192,
         "height": 192,
-        "offset_x": -96,
-        "offset_y": -148,
+        "origin_x": 96,
+        "origin_y": 148,
         "animation": {
             "idle": {"row":0, "frames":[0,1,2,3,4,5,6,7,8,9,10,11,12,13]},
             "heal":{"duration": 25, "row":1, "frames":[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24], "events": {"hit": 19}}

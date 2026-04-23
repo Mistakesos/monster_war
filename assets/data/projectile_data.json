@@ -5,8 +5,8 @@
         "y": 0,
         "width": 64,
         "height": 64,
-        "offset_x": -32,
-        "offset_y": -96,
+        "origin_x": 32,
+        "origin_y": 96,
         "arc_height": 80.0,
         "total_flight_time": 0.5,
         "sounds": {
@@ -19,8 +19,8 @@
         "y": 0,
         "width": 96,
         "height": 96,
-        "offset_x": -48,
-        "offset_y": -80,
+        "origin_x": 48,
+        "origin_y": 80,
         "arc_height": 10.0,
         "total_flight_time": 0.4,
         "sounds": {
