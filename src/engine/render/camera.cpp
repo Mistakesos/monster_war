@@ -123,6 +123,9 @@ sf::Vector2f Camera::world_to_screen_with_parallax(const sf::Vector2f& world_pos
 }
 
 sf::Vector2f Camera::screen_to_world(const sf::Vector2f& screen_pos) const {
+    // 先设置 world_view，确保 mapPixelToCoords 使用正确的 view 进行转换
+    // （因为渲染后窗口的 view 可能被设置为 ui_view）
+    window_obs_->setView(world_view_);
     return window_obs_->mapPixelToCoords(static_cast<sf::Vector2i>(screen_pos));
 }
 } // namespace engine::render

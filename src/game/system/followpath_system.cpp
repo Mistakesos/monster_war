@@ -1,6 +1,7 @@
 #include "game/system/followpath_system.hpp"
 #include "game/data/waypoint_node.hpp"
 #include "game/component/enemy_component.hpp"
+#include "game/component/blocked_by_component.hpp"
 #include "engine/component/velocity_component.hpp"
 #include "engine/component/transform_component.hpp"
 #include "game/defs/tags.hpp"
@@ -18,10 +19,11 @@ void FollowPathSystem::update(entt::registry& registry,
                               std::unordered_map<int, game::data::WaypointNode>& waypoint_nodes,
                               sf::Time delta) {
     spdlog::trace("FollowPathSystem::update");
-    // 筛选依据：速度组件、变换组件、敌人组件
+    // 筛选依据：速度组件、变换组件、敌人组件，排除“被阻挡的敌人”
     auto view = registry.view<engine::component::VelocityComponent, 
-        engine::component::TransformComponent, 
-        game::component::EnemyComponent>();
+                              engine::component::TransformComponent, 
+                              game::component::EnemyComponent>(
+                              entt::exclude<game::component::BlockedByComponent>);
     for (auto&& [entity, velocity, transform, enemy] : view.each()) {
         // 如果速度为0，直接跳过移动逻辑
         if (enemy.speed_ == 0.f) {
@@ -38,7 +40,7 @@ void FollowPathSystem::update(entt::registry& registry,
         // 如果距离小于阈值，则切换到下一个节点（阈值不要太小，不然敌人速度快的话可能造成震荡）
         float frame_step = std::abs(enemy.speed_) * delta.asSeconds();
         float threshold = std::max(frame_step * 1.2f, 1.f);
-        if (direction.length() < threshold) {
+        if (direction.lengthSquared() < threshold * threshold) {
             // 如果下一个节点ID列表为空，代表到达终点。则发送信号并添加删除标记
             auto size = target_node.next_node_ids_.size();
             if (size == 0) {

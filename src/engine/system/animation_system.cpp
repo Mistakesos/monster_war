@@ -1,12 +1,24 @@
 #include "engine/system/animation_system.hpp"
 #include "engine/component/animation_component.hpp"
 #include "engine/component/sprite_component.hpp"
+#include "engine/utils/events.hpp"
 #include <entt/entity/registry.hpp>
+#include <entt/signal/dispatcher.hpp>
 
 namespace engine::system {
 
-void AnimationSystem::update(entt::registry& registry, sf::Time delta) {
-    auto view = registry.view<engine::component::AnimationComponent, engine::component::SpriteComponent>();
+AnimationSystem::AnimationSystem(entt::registry& registry, entt::dispatcher& dispatcher)
+    : registry_{registry}
+    , dispatcher_{dispatcher} {
+    dispatcher_.sink<engine::utils::PlayAnimationEvent>().connect<&AnimationSystem::on_play_animation_event>(this);
+}
+
+AnimationSystem::~AnimationSystem() {
+    dispatcher_.disconnect(this);
+}
+
+void AnimationSystem::update(sf::Time delta) {
+    auto view = registry_.view<engine::component::AnimationComponent, engine::component::SpriteComponent>();
     for (auto&& [entity, anim_component, sprite_component] : view.each()) {
         // 如果动画不存在，则跳过
         auto it = anim_component.animations_.find(anim_component.current_animation_id_);
@@ -42,9 +54,17 @@ void AnimationSystem::update(entt::registry& registry, sf::Time delta) {
             }
         }
         // 更新 SpriteComponent 显示区域 （根据当前动画帧的显示区域信息）
-        const auto& next_frame = current_frame;
-        sprite_component.sprite_.setTextureRect(next_frame.src_rect_);
+        sprite_component.sprite_.setTextureRect(current_animation.frames_[anim_component.current_frame_index_].src_rect_);
     }
 }
 
+void AnimationSystem::on_play_animation_event(const engine::utils::PlayAnimationEvent& event) {
+    // 使用try_get方法来安全获取可能存在的组件。如果不存在则返回nullptr
+    if (auto anim = registry_.try_get<engine::component::AnimationComponent>(event.entity_); anim) {
+        anim->current_animation_id_ = event.animation_id_;      // 替换动画ID
+        anim->current_frame_index_ = 0;
+        anim->current_time_ = sf::Time::Zero;
+        anim->animations_.at(event.animation_id_).loop_ = event.loop_;
+    }
+}
 } // namespace engine::system

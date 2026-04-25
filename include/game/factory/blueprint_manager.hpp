@@ -18,15 +18,15 @@ namespace game::factory {
  */
 class BlueprintManager {
     friend class EntityFactory;
-
-
 public:
     BlueprintManager(engine::resource::ResourceManager& resource_manager);
 
-    [[nodiscard]] bool load_enemy_class_blueprints(std::string_view enemy_json_path);      ///< @brief 加载敌人类型蓝图, 返回是否成功
+    [[nodiscard]] bool load_player_class_blueprints(std::string_view player_json_path);     ///< @brief 加载玩家职业蓝图, 返回是否成功
+    [[nodiscard]] bool load_enemy_class_blueprints(std::string_view enemy_json_path);       ///< @brief 加载敌人类型蓝图, 返回是否成功
     // TODO: 未来添加其他蓝图加载函数
 
-    const data::EnemyClassBlueprint& get_enemy_class_blueprint(entt::id_type id) const;    ///< @brief 获取指定ID的敌人类型蓝图
+    const data::PlayerClassBlueprint& get_player_class_blueprint(entt::id_type id) const;   ///< @brief 获取指定ID的玩家职业蓝图
+    const data::EnemyClassBlueprint& get_enemy_class_blueprint(entt::id_type id) const;     ///< @brief 获取指定ID的敌人类型蓝图
     // TODO: 未来添加其他蓝图获取函数
 
 private:
@@ -35,11 +35,13 @@ private:
     data::SpriteBlueprint parse_sprite(const nlohmann::json& json);
     std::unordered_map<entt::id_type, data::AnimationBlueprint> parse_animations_map(const nlohmann::json& json);
     data::SoundBlueprint parse_sound(const nlohmann::json& json);
+    data::PlayerBlueprint parse_player(const nlohmann::json& json);
     data::EnemyBlueprint parse_enemy(const nlohmann::json& json);
     data::DisplayInfoBlueprint parse_display_info(const nlohmann::json& json);
 
     engine::resource::ResourceManager& resource_manager_;
 
+    std::unordered_map<entt::id_type, data::PlayerClassBlueprint> player_class_blueprints_; ///< @brief 玩家职业蓝图
     std::unordered_map<entt::id_type, data::EnemyClassBlueprint> enemy_class_blueprints_;   ///< @brief 敌人类型蓝图
     // TODO: 未来添加其他蓝图容器
 };

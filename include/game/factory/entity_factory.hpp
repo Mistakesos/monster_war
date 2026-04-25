@@ -18,6 +18,7 @@ public:
     /// @brief 实体工厂构造函数, 需要传入注册表和蓝图管理器。通过蓝图数据创建不同实体
     EntityFactory(entt::registry& registry, BlueprintManager& blueprint_manager);
 
+    entt::entity create_player_unit(entt::id_type class_id, const sf::Vector2f& position, int level = 1, int rarity = 1);
     entt::entity create_enemy_unit(entt::id_type class_id, const sf::Vector2f& position, int target_waypoint_id, int level = 1, int rarity = 1);
     // TODO: 未来添加其他实体的创建函数
 
@@ -30,6 +31,7 @@ private:
         const data::SpriteBlueprint& sprite_blueprint,
         entt::id_type default_animation_id);
     void add_stats_component(entt::entity entity, const data::StatsBlueprint& stats, int level = 1, int rarity = 1);
+    void add_player_component(entt::entity entity, const data::PlayerBlueprint& player, int rarity);
     void add_enemy_component(entt::entity entity, const data::EnemyBlueprint& enemy, int target_waypoint_id);
     void add_audio_component(entt::entity entity, const data::SoundBlueprint& sounds);
     // TODO: 未来添加其他组件创建函数
