@@ -15,6 +15,7 @@
 #include "engine/component/render_component.hpp"
 #include "game/component/enemy_component.hpp"
 #include "game/component/player_component.hpp"
+#include "game/component/stats_component.hpp"
 
 #include "engine/system/render_system.hpp"
 #include "engine/system/movement_system.hpp"
@@ -23,11 +24,17 @@
 #include "game/system/followpath_system.hpp"
 #include "game/system/remove_dead_system.hpp"
 #include "game/system/block_system.hpp"
+#include "game/system/timer_system.hpp"
+#include "game/system/set_target_system.hpp"
+#include "game/system/orientation_system.hpp"
+#include "game/system/attack_starter_system.hpp"
+#include "game/system/animation_state_system.hpp"
 
 #include "engine/loader/level_loader.hpp"
 #include "game/loader/entity_builder_mw.hpp"
 #include "game/factory/blueprint_manager.hpp"
 #include "game/factory/entity_factory.hpp"
+#include "game/defs/tags.hpp"
 #include "engine/core/context.hpp"
 #include "engine/utils/events.hpp"
 
@@ -47,8 +54,12 @@ GameScene::GameScene(engine::core::Context& context)
     , ysort_system_{std::make_unique<engine::system::YSortSystem>()}
     , follow_path_system_{std::make_unique<game::system::FollowPathSystem>()}
     , remove_dead_system_{std::make_unique<game::system::RemoveDeadSystem>()}
-    , block_system_{std::make_unique<game::system::BlockSystem>()} {
-
+    , block_system_{std::make_unique<game::system::BlockSystem>()}
+    , set_target_system_{std::make_unique<game::system::SetTargetSystem>()}
+    , attack_starter_system_{std::make_unique<game::system::AttackStarterSystem>()}
+    , timer_system_{std::make_unique<game::system::TimerSystem>()}
+    , orientation_system_{std::make_unique<game::system::OrientationSystem>()}
+    , animation_state_system_{std::make_unique<game::system::AnimationStateSystem>(registry_, context.get_dispatcher())} {
     if (!load_level()) {
         spdlog::error("加载关卡失败！");
     }
@@ -114,6 +125,7 @@ bool GameScene::init_input_connections() {
     input_manager.on_action(Action::MouseRight).connect<&GameScene::on_create_test_player_melee>(this);
     input_manager.on_action(Action::MouseLeft).connect<&GameScene::on_create_test_player_ranged>(this);
     input_manager.on_action(Action::Pause).connect<&GameScene::on_clear_all_players>(this);
+    input_manager.on_action(Action::MoveLeft).connect<&GameScene::on_create_test_player_healer>(this);
     return true;
 }
 
@@ -154,7 +166,12 @@ bool GameScene::on_create_test_player_melee() {
     auto mouse_pos = context_.get_input_manager().get_mouse_position_window();
     // 通过 camera 将屏幕坐标转换为世界坐标（自动处理 viewport/letterbox 偏移）
     auto world_pos = context_.get_camera().screen_to_world(static_cast<sf::Vector2f>(mouse_pos));
-    entity_factory_->create_player_unit("warrior"_hs, world_pos);
+
+    auto entity = entity_factory_->create_player_unit("warrior"_hs, world_pos);
+    // 让玩家处于受伤状态（治疗师不会锁定满血目标）
+    registry_.emplace<game::defs::InjuredTag>(entity);
+    auto& stats = registry_.get<game::component::StatsComponent>(entity);
+    stats.hp_ = stats.max_hp_ / 2.f;
     spdlog::info("创建战士: 位置: {}, {}", world_pos.x, world_pos.y);
     return true;
 }
@@ -164,8 +181,23 @@ bool GameScene::on_create_test_player_ranged() {
     auto mouse_pos = context_.get_input_manager().get_mouse_position_window();
     // 通过 camera 将屏幕坐标转换为世界坐标（自动处理 viewport/letterbox 偏移）
     auto world_pos = context_.get_camera().screen_to_world(static_cast<sf::Vector2f>(mouse_pos));
-    entity_factory_->create_player_unit("archer"_hs, world_pos);
+
+    auto entity = entity_factory_->create_player_unit("archer"_hs, world_pos);
+    // 让玩家处于受伤状态（治疗师不会锁定满血目标）
+    registry_.emplace<game::defs::InjuredTag>(entity);
+    auto& stats = registry_.get<game::component::StatsComponent>(entity);
+    stats.hp_ = stats.max_hp_ / 2;
     spdlog::info("创建弓箭手: 位置: {}, {}", world_pos.x, world_pos.y);
+    return true;
+}
+
+bool GameScene::on_create_test_player_healer() {
+    // 获取鼠标在窗口中的像素位置
+    auto mouse_pos = context_.get_input_manager().get_mouse_position_window();
+    // 通过 camera 将屏幕坐标转换为世界坐标（自动处理 viewport/letterbox 偏移）
+    auto world_pos = context_.get_camera().screen_to_world(static_cast<sf::Vector2f>(mouse_pos));
+
+    entity_factory_->create_player_unit("witch"_hs, world_pos);
     return true;
 }
 
@@ -184,12 +216,15 @@ void GameScene::update(sf::Time delta) {
     remove_dead_system_->update(registry_);
     
     // 注意系统更新的顺序
-    follow_path_system_->update(registry_, dispatcher, waypoint_nodes_, delta);
+    timer_system_->update(registry_, delta);
     block_system_->update(registry_, dispatcher);
+    set_target_system_->update(registry_);
+    follow_path_system_->update(registry_, dispatcher, waypoint_nodes_, delta);
+    orientation_system_->update(registry_);     // 调用顺序要在Block、SetTarget、FollowPath之后
+    attack_starter_system_->update(registry_, dispatcher);
     movement_system_->update(registry_, delta);
     animation_system_->update(delta);
-    ysort_system_->update(registry_);       // 确保在 MovementSystem 之后
-
+    ysort_system_->update(registry_);   // 调用顺序要在MovementSystem之后
     Scene::update(delta);
 }
 

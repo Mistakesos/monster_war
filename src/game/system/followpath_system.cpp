@@ -19,11 +19,11 @@ void FollowPathSystem::update(entt::registry& registry,
                               std::unordered_map<int, game::data::WaypointNode>& waypoint_nodes,
                               sf::Time delta) {
     spdlog::trace("FollowPathSystem::update");
-    // 筛选依据：速度组件、变换组件、敌人组件，排除“被阻挡的敌人”
+    // 筛选依据：速度组件、变换组件、敌人组件，排除“被阻挡的敌人”和“动作锁定敌人”
     auto view = registry.view<engine::component::VelocityComponent, 
                               engine::component::TransformComponent, 
                               game::component::EnemyComponent>(
-                              entt::exclude<game::component::BlockedByComponent>);
+                              entt::exclude<game::component::BlockedByComponent, game::defs::ActionLockTag>);
     for (auto&& [entity, velocity, transform, enemy] : view.each()) {
         // 如果速度为0，直接跳过移动逻辑
         if (enemy.speed_ == 0.f) {

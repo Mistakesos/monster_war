@@ -36,24 +36,26 @@ void AnimationSystem::update(sf::Time delta) {
         // 更新当前播放时间 (推进计时器)
         anim_component.current_time_ += delta * anim_component.speed_;
 
-        // 获取当前帧
-        const auto& current_frame = current_animation.frames_[anim_component.current_frame_index_];
-
-        // 检查是否需要切换到下一帧
-        while (anim_component.current_time_ >= current_frame.duration_) {
-            anim_component.current_time_ -= current_frame.duration_;
+        // 连续推进多帧，直到时间不够切帧为止
+        while (anim_component.current_time_ >= current_animation.frames_[anim_component.current_frame_index_].duration_) {
+            anim_component.current_time_ -= current_animation.frames_[anim_component.current_frame_index_].duration_;
             anim_component.current_frame_index_++;
 
             if (anim_component.current_frame_index_ >= current_animation.frames_.size()) {
                 if (current_animation.loop_) {
                     anim_component.current_frame_index_ = 0;
                 } else {
+                    // 停在最后一帧
                     anim_component.current_frame_index_ = current_animation.frames_.size() - 1;
-                    break; // 如果动画已结束，停止处理
+                    // 清除残留时间，避免影响下一段动画
+                    anim_component.current_time_ = sf::Time::Zero;
+                    dispatcher_.enqueue(engine::utils::AnimationFinishedEvent{entity, anim_component.current_animation_id_});
+                    break;
                 }
             }
         }
-        // 更新 SpriteComponent 显示区域 （根据当前动画帧的显示区域信息）
+
+        // 更新 Sprite 显示区域
         sprite_component.sprite_.setTextureRect(current_animation.frames_[anim_component.current_frame_index_].src_rect_);
     }
 }
