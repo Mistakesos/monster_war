@@ -4,16 +4,6 @@
 #include "engine/resource/resource_manager.hpp"
 #include "engine/audio/audio_player.hpp"
 
-#include "engine/ui/ui_manager.hpp"
-#include "engine/ui/ui_image.hpp"
-#include "engine/ui/ui_label.hpp"
-
-#include "engine/component/transform_component.hpp"
-#include "engine/component/sprite_component.hpp"
-#include "engine/component/velocity_component.hpp"
-#include "engine/component/animation_component.hpp"
-#include "engine/component/render_component.hpp"
-#include "game/component/enemy_component.hpp"
 #include "game/component/player_component.hpp"
 #include "game/component/stats_component.hpp"
 
@@ -21,6 +11,7 @@
 #include "engine/system/movement_system.hpp"
 #include "engine/system/animation_system.hpp"
 #include "engine/system/ysort_system.hpp"
+#include "engine/system/audio_system.hpp"
 #include "game/system/followpath_system.hpp"
 #include "game/system/remove_dead_system.hpp"
 #include "game/system/block_system.hpp"
@@ -29,6 +20,8 @@
 #include "game/system/orientation_system.hpp"
 #include "game/system/attack_starter_system.hpp"
 #include "game/system/animation_state_system.hpp"
+#include "game/system/animation_event_system.hpp"
+#include "game/system/combat_resolve_system.hpp"
 
 #include "engine/loader/level_loader.hpp"
 #include "game/loader/entity_builder_mw.hpp"
@@ -38,9 +31,9 @@
 #include "engine/core/context.hpp"
 #include "engine/utils/events.hpp"
 
-#include "entt/signal/sigh.hpp"
-#include "entt/signal/dispatcher.hpp"
-#include "entt/core/hashed_string.hpp"
+#include <entt/signal/sigh.hpp>
+#include <entt/signal/dispatcher.hpp>
+#include <entt/core/hashed_string.hpp>
 #include <spdlog/spdlog.h>
 
 using namespace entt::literals;
@@ -52,6 +45,7 @@ GameScene::GameScene(engine::core::Context& context)
     , movement_system_{std::make_unique<engine::system::MovementSystem>()}
     , animation_system_{std::make_unique<engine::system::AnimationSystem>(registry_, context.get_dispatcher())}
     , ysort_system_{std::make_unique<engine::system::YSortSystem>()}
+    , audio_system_{std::make_unique<engine::system::AudioSystem>(registry_, context_)}
     , follow_path_system_{std::make_unique<game::system::FollowPathSystem>()}
     , remove_dead_system_{std::make_unique<game::system::RemoveDeadSystem>()}
     , block_system_{std::make_unique<game::system::BlockSystem>()}
@@ -59,7 +53,9 @@ GameScene::GameScene(engine::core::Context& context)
     , attack_starter_system_{std::make_unique<game::system::AttackStarterSystem>()}
     , timer_system_{std::make_unique<game::system::TimerSystem>()}
     , orientation_system_{std::make_unique<game::system::OrientationSystem>()}
-    , animation_state_system_{std::make_unique<game::system::AnimationStateSystem>(registry_, context.get_dispatcher())} {
+    , animation_state_system_{std::make_unique<game::system::AnimationStateSystem>(registry_, context.get_dispatcher())}
+    , animation_event_system_{std::make_unique<game::system::AnimationEventSystem>(registry_, context.get_dispatcher())}
+    , combat_resolve_system_{std::make_unique<game::system::CombatResolveSystem>(registry_, context.get_dispatcher())} {
     if (!load_level()) {
         spdlog::error("加载关卡失败！");
     }

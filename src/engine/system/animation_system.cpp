@@ -41,6 +41,13 @@ void AnimationSystem::update(sf::Time delta) {
             anim_component.current_time_ -= current_animation.frames_[anim_component.current_frame_index_].duration_;
             anim_component.current_frame_index_++;
 
+            // 检查是否要发送动画事件
+            if (current_animation.events_.find(anim_component.current_frame_index_) != current_animation.events_.end()) {
+                dispatcher_.enqueue(engine::utils::AnimationEvent{entity, 
+                    current_animation.events_.at(anim_component.current_frame_index_),
+                    anim_component.current_animation_id_});
+            }
+
             if (anim_component.current_frame_index_ >= current_animation.frames_.size()) {
                 if (current_animation.loop_) {
                     anim_component.current_frame_index_ = 0;

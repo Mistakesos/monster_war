@@ -36,8 +36,10 @@ struct Animation {
      * @param loop 是否循环，默认true
      */
     Animation(std::vector<AnimationFrame> frames, 
+              std::unordered_map<int, entt::id_type> events = {},
               bool loop = true) 
         : frames_{std::move(frames)}
+        , events_{events}
         , loop_{loop} {
         // 计算动画总时长 (总时长 = 所有帧时长之和)
         total_duration_ = sf::Time::Zero;
@@ -46,9 +48,10 @@ struct Animation {
         }
     }
 
-    std::vector<AnimationFrame> frames_;        ///< @brief 动画帧
-    sf::Time total_duration_{sf::Time::Zero};   ///< @brief 动画总时长（毫秒）
-    bool loop_{true};                           ///< @brief 是否循环
+    std::vector<AnimationFrame> frames_;            ///< @brief 动画帧
+    std::unordered_map<int, entt::id_type> events_; ///< @brief 动画事件，键为帧索引，值为事件ID
+    sf::Time total_duration_{sf::Time::Zero};       ///< @brief 动画总时长（毫秒）
+    bool loop_{true};                               ///< @brief 是否循环
 };
 
 /**

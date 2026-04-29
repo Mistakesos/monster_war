@@ -419,6 +419,7 @@ std::optional<engine::component::TileInfo> LevelLoader::get_tile_info_by_gid(int
                     auto animation_frame = engine::component::AnimationFrame(static_cast<sf::IntRect>(frame_rect), duration);
                     animation_frames.push_back(animation_frame);
                 }
+                // TODO: 未来可在Tiled中添加动画事件并解析，目前项目暂不需要，让事件为默认空
                 tile_info.animation_ = engine::component::Animation(std::move(animation_frames));
             }
             // 补充属性信息
