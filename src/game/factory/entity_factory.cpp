@@ -15,11 +15,10 @@
 #include "game/component/stats_component.hpp"
 #include "game/component/class_name_component.hpp"
 #include "game/component/blocker_component.hpp"
+#include "game/component/projectile_component.hpp"
 #include <entt/entity/registry.hpp>
 #include <entt/core/hashed_string.hpp>
 #include <spdlog/spdlog.h>
-#include <glm/gtc/constants.hpp>
-#include <glm/trigonometric.hpp>
 
 using namespace entt::literals;
 
@@ -53,6 +52,9 @@ entt::entity EntityFactory::create_player_unit(entt::id_type class_id, const sf:
     // 添加Player组件
     add_player_component(entity, blueprint.player_, rarity);
 
+    // 添加ProjectileID组件
+    add_projectile_id_component(entity, blueprint.projectile_id_);
+
     // 补充其他必要组件
     registry_.emplace<game::component::ClassNameComponent>(entity, class_id, blueprint.display_info_.name_);
     registry_.emplace<engine::component::RenderComponent>(entity);
@@ -84,6 +86,9 @@ entt::entity EntityFactory::create_enemy_unit(entt::id_type class_id, const sf::
     // 添加Enemy组件
     add_enemy_component(entity, blueprint.enemy_, target_waypoint_id);
 
+    // 添加ProjectileID组件
+    add_projectile_id_component(entity, blueprint.projectile_id_);
+
     // 补充其他必要组件
     registry_.emplace<game::component::ClassNameComponent>(entity, class_id, blueprint.display_info_.name_);
     registry_.emplace<engine::component::RenderComponent>(entity);  // 使用默认主图层
@@ -93,6 +98,31 @@ entt::entity EntityFactory::create_enemy_unit(entt::id_type class_id, const sf::
     return entity;
 }
 
+entt::entity EntityFactory::create_projectile(entt::id_type id, const sf::Vector2f& start_position, const sf::Vector2f& target_position, entt::entity target, float damage) {
+    // 创建投射物实体
+    auto entity = registry_.create();
+    const auto& blueprint = blueprint_manager_.get_projectile_blueprint(id);
+    // --- 依次添加必要组件 ---
+    // 添加ProjectileComponent
+    registry_.emplace<game::component::ProjectileComponent>(entity, 
+        target, 
+        damage,
+        start_position,
+        target_position, 
+        start_position,
+        blueprint.arc_height_, 
+        blueprint.total_flight_time_,
+        sf::Time::Zero);
+    // 先添加TransformComponent（因为add_sprite_component内部依赖TransformComponent）
+    add_transform_component(entity, start_position);
+    // 添加SpriteComponent
+    add_sprite_component(entity, blueprint.sprite_);
+    // 添加AudioComponent
+    add_audio_component(entity, blueprint.sounds_);
+    // 添加RenderComponent(让投射物位于主图层+1，即可以遮住角色)
+    registry_.emplace<engine::component::RenderComponent>(entity, engine::component::RenderComponent::MAIN_LAYER + 1);
+    return entity;
+}
 void EntityFactory::add_transform_component(entt::entity entity, const sf::Vector2f& position, const sf::Vector2f& scale, sf::Angle rotation) {
     registry_.emplace<engine::component::TransformComponent>(entity, position, scale, rotation);
 }
@@ -102,7 +132,8 @@ void EntityFactory::add_sprite_component(entt::entity entity, const data::Sprite
     auto texture = resource_manager->load_texture(entt::hashed_string(sprite.path_.c_str()), sprite.path_);
     // 手绘风格的动态单位（玩家、敌人）需要平滑过滤，防止锯齿
     texture->setSmooth(true);
-    registry_.emplace<engine::component::SpriteComponent>(entity, *texture);
+    sf::Sprite spr(*texture, static_cast<sf::IntRect>(sprite.src_rect_));
+    registry_.emplace<engine::component::SpriteComponent>(entity, spr);
     
     auto& transform = registry_.get<engine::component::TransformComponent>(entity);
     transform.origin_ = sprite.origin_;
@@ -164,7 +195,7 @@ void EntityFactory::add_stats_component(entt::entity entity, const data::StatsBl
         def, 
         stats.range_,
         stats.atk_interval_,
-        sf::seconds(0.f),
+        sf::Time::Zero,
         level,
         rarity);
 }
@@ -204,6 +235,11 @@ void EntityFactory::add_audio_component(entt::entity entity, const data::SoundBl
         audio_map.emplace(sound_key, sound_id);
     }
     registry_.emplace<engine::component::AudioComponent>(entity, std::move(audio_map));
+}
+
+void EntityFactory::add_projectile_id_component(entt::entity entity, entt::id_type id) {
+    if (id == entt::null) return;
+    registry_.emplace<game::component::ProjectileIDComponent>(entity, id);
 }
 
 }   // namespace game::factory

@@ -20,6 +20,7 @@ public:
 
     entt::entity create_player_unit(entt::id_type class_id, const sf::Vector2f& position, int level = 1, int rarity = 1);
     entt::entity create_enemy_unit(entt::id_type class_id, const sf::Vector2f& position, int target_waypoint_id, int level = 1, int rarity = 1);
+    entt::entity create_projectile(entt::id_type id, const sf::Vector2f& start_position, const sf::Vector2f& target_position, entt::entity target, float damage);
     // TODO: 未来添加其他实体的创建函数
 
 private:
@@ -34,6 +35,7 @@ private:
     void add_player_component(entt::entity entity, const data::PlayerBlueprint& player, int rarity);
     void add_enemy_component(entt::entity entity, const data::EnemyBlueprint& enemy, int target_waypoint_id);
     void add_audio_component(entt::entity entity, const data::SoundBlueprint& sounds);
+    void add_projectile_id_component(entt::entity entity, entt::id_type id);
     // TODO: 未来添加其他组件创建函数
 
     entt::registry& registry_;

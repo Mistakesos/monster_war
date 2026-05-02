@@ -19,6 +19,7 @@ private:
 
     // 拆分不同的事件类型
     void handle_hit_event(const engine::utils::AnimationEvent& event);    ///< @brief 命中事件
+    void handle_emit_event(const engine::utils::AnimationEvent& event);   ///< @brief 发射事件
     
     entt::registry& registry_;
     entt::dispatcher& dispatcher_;

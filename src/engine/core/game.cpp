@@ -86,6 +86,9 @@ void Game::run() {
         input_manager_->end_frame();
 
         render();
+
+        // 分发事件
+        dispatcher_->update();
     }
 }
 
@@ -105,9 +108,6 @@ void Game::handle_event() {
 void Game::update(sf::Time delta) {
     // 游戏逻辑更新
     scene_manager_->update(delta);
-
-    // 分发事件
-    dispatcher_->update();
 }
 
 void Game::render() {

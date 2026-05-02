@@ -22,6 +22,7 @@
 #include "game/system/animation_state_system.hpp"
 #include "game/system/animation_event_system.hpp"
 #include "game/system/combat_resolve_system.hpp"
+#include "game/system/projectile_system.hpp"
 
 #include "engine/loader/level_loader.hpp"
 #include "game/loader/entity_builder_mw.hpp"
@@ -40,22 +41,7 @@ using namespace entt::literals;
 
 namespace game::scene {
 GameScene::GameScene(engine::core::Context& context)
-    : Scene{"GameScene", context}
-    , render_system_{std::make_unique<engine::system::RenderSystem>()}
-    , movement_system_{std::make_unique<engine::system::MovementSystem>()}
-    , animation_system_{std::make_unique<engine::system::AnimationSystem>(registry_, context.get_dispatcher())}
-    , ysort_system_{std::make_unique<engine::system::YSortSystem>()}
-    , audio_system_{std::make_unique<engine::system::AudioSystem>(registry_, context_)}
-    , follow_path_system_{std::make_unique<game::system::FollowPathSystem>()}
-    , remove_dead_system_{std::make_unique<game::system::RemoveDeadSystem>()}
-    , block_system_{std::make_unique<game::system::BlockSystem>()}
-    , set_target_system_{std::make_unique<game::system::SetTargetSystem>()}
-    , attack_starter_system_{std::make_unique<game::system::AttackStarterSystem>()}
-    , timer_system_{std::make_unique<game::system::TimerSystem>()}
-    , orientation_system_{std::make_unique<game::system::OrientationSystem>()}
-    , animation_state_system_{std::make_unique<game::system::AnimationStateSystem>(registry_, context.get_dispatcher())}
-    , animation_event_system_{std::make_unique<game::system::AnimationEventSystem>(registry_, context.get_dispatcher())}
-    , combat_resolve_system_{std::make_unique<game::system::CombatResolveSystem>(registry_, context.get_dispatcher())} {
+    : Scene{"GameScene", context} {
     if (!load_level()) {
         spdlog::error("加载关卡失败！");
     }
@@ -72,6 +58,11 @@ GameScene::GameScene(engine::core::Context& context)
 
     if (!init_entity_factory()) {
         spdlog::error("初始化实体工厂失败");
+        return;
+    }
+
+    if (!init_systems()) {
+        spdlog::error("初始化系统失败");
         return;
     }
 
@@ -130,13 +121,38 @@ bool GameScene::init_entity_factory() {
     if (!blueprint_manager_) {  
         blueprint_manager_ = std::make_shared<game::factory::BlueprintManager>(context_.get_resource_manager());
         if (!blueprint_manager_->load_enemy_class_blueprints("assets/data/enemy_data.json") ||
-            !blueprint_manager_->load_player_class_blueprints("assets/data/player_data.json")) {
+            !blueprint_manager_->load_player_class_blueprints("assets/data/player_data.json") ||
+            !blueprint_manager_->load_projectile_blueprints("assets/data/projectile_data.json")) {
             spdlog::error("加载蓝图失败");
             return false;
         }
     }
     entity_factory_ = std::make_unique<game::factory::EntityFactory>(registry_, *blueprint_manager_);
     spdlog::info("entity_factory_ 加载完成");
+    return true;
+}
+
+bool GameScene::init_systems() {
+    auto& dispatcher = context_.get_dispatcher();
+    // 系统初始化需要在可能的依赖模块(如实体工厂)初始化之后
+    render_system_ = std::make_unique<engine::system::RenderSystem>();
+    movement_system_ = std::make_unique<engine::system::MovementSystem>();
+    animation_system_ = std::make_unique<engine::system::AnimationSystem>(registry_, dispatcher);
+    ysort_system_ = std::make_unique<engine::system::YSortSystem>();
+    audio_system_ = std::make_unique<engine::system::AudioSystem>(registry_, context_);
+    
+    follow_path_system_ = std::make_unique<game::system::FollowPathSystem>();
+    remove_dead_system_ = std::make_unique<game::system::RemoveDeadSystem>();
+    block_system_ = std::make_unique<game::system::BlockSystem>();
+    set_target_system_ = std::make_unique<game::system::SetTargetSystem>();
+    attack_starter_system_ = std::make_unique<game::system::AttackStarterSystem>();
+    timer_system_ = std::make_unique<game::system::TimerSystem>();
+    orientation_system_ = std::make_unique<game::system::OrientationSystem>();
+    animation_state_system_ = std::make_unique<game::system::AnimationStateSystem>(registry_, dispatcher);
+    animation_event_system_ = std::make_unique<game::system::AnimationEventSystem>(registry_, dispatcher);
+    combat_resolve_system_ = std::make_unique<game::system::CombatResolveSystem>(registry_, dispatcher);
+    projectile_system_ = std::make_unique<game::system::ProjectileSystem>(registry_, dispatcher, *entity_factory_);
+    spdlog::info("systems 初始化完成");
     return true;
 }
 
@@ -218,6 +234,7 @@ void GameScene::update(sf::Time delta) {
     follow_path_system_->update(registry_, dispatcher, waypoint_nodes_, delta);
     orientation_system_->update(registry_);     // 调用顺序要在Block、SetTarget、FollowPath之后
     attack_starter_system_->update(registry_, dispatcher);
+    projectile_system_->update(delta);
     movement_system_->update(registry_, delta);
     animation_system_->update(delta);
     ysort_system_->update(registry_);   // 调用顺序要在MovementSystem之后

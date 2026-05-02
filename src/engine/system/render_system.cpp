@@ -18,9 +18,18 @@ void RenderSystem::update(entt::registry& registry, render::Renderer& render, co
     view.use<component::RenderComponent>();     // 重要！这里要使用 RenderComponent 的顺序
     for (auto&& [entity, _, transform, sprite] : view.each()) {
         auto& s = sprite.sprite_;
-        s.setOrigin(transform.origin_);
-        s.setRotation(transform.angle_);
-        s.setPosition(transform.position_);
+        if (transform.rotation_ != sf::Angle::Zero) {
+            // 对于旋转的实体（如子弹），使用纹理中心作为旋转原点
+            auto center = s.getLocalBounds().getCenter();
+            // 计算自定义原点与纹理中心的偏移量，补偿到位置上
+            auto offset = center - transform.origin_;
+            s.setOrigin(center);
+            s.setPosition(transform.position_ + offset);
+            s.setRotation(transform.rotation_);
+        } else {
+            s.setOrigin(transform.origin_);
+            s.setPosition(transform.position_);
+        }
         s.setScale(transform.scale_);
         render.draw_sprite(camera, s);
     }

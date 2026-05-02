@@ -22,6 +22,8 @@ bool BlueprintManager::load_player_class_blueprints(std::string_view player_json
     try {
         for (auto& [class_name, data_json] : json.items()) {
             entt::id_type class_id = entt::hashed_string(class_name.c_str());
+            // 解析 Projectile
+            entt::id_type projectile_id = parse_projectile_id(data_json);
             // 解析 Stats
             data::StatsBlueprint stats = parse_stats(data_json);
             // 解析 Sprite
@@ -35,7 +37,8 @@ bool BlueprintManager::load_player_class_blueprints(std::string_view player_json
             // 解析DisplayInfo
             data::DisplayInfoBlueprint display_info = parse_display_info(data_json);
             // 解析完毕，组合蓝图并插入容器
-            player_class_blueprints_.emplace(class_id, data::PlayerClassBlueprint{class_id, 
+            player_class_blueprints_.emplace(class_id, data::PlayerClassBlueprint{class_id,
+                projectile_id,
                 class_name, 
                 std::move(stats),
                 std::move(player),
@@ -62,6 +65,8 @@ bool BlueprintManager::load_enemy_class_blueprints(std::string_view enemy_json_p
     try {
         for (auto& [class_name, data_json] : json.items()) {
             entt::id_type class_id = entt::hashed_string(class_name.c_str());
+            // 解析 Projectile
+            entt::id_type projectile_id = parse_projectile_id(data_json);
             // 解析 Stats
             data::StatsBlueprint stats = parse_stats(data_json);
             // 解析 Sprite
@@ -75,7 +80,8 @@ bool BlueprintManager::load_enemy_class_blueprints(std::string_view enemy_json_p
             // 解析DisplayInfo
             data::DisplayInfoBlueprint display_info = parse_display_info(data_json);
             // 解析完毕，组合蓝图并插入容器
-            enemy_class_blueprints_.emplace(class_id, data::EnemyClassBlueprint{class_id, 
+            enemy_class_blueprints_.emplace(class_id, data::EnemyClassBlueprint{class_id,
+                projectile_id,
                 class_name, 
                 std::move(stats),
                 std::move(enemy),
@@ -86,6 +92,39 @@ bool BlueprintManager::load_enemy_class_blueprints(std::string_view enemy_json_p
         }
     } catch (const std::exception& e) {
         spdlog::error("加载敌人单位数据时出错: {}", e.what());
+        return false;
+    }
+    return true;
+}
+
+bool BlueprintManager::load_projectile_blueprints(std::string_view projectile_json_path) {
+    auto path = std::filesystem::path(projectile_json_path);
+    std::ifstream file(path);
+    nlohmann::json json;
+    file >> json;
+    file.close();
+    // --- 解析蓝图 ---
+    try {
+        for (auto& [name, data_json] : json.items()) {
+            // 解析基础数据
+            entt::id_type id = entt::hashed_string(name.c_str());
+            float arc_height = data_json["arc_height"].get<float>();
+            float total_flight_time = data_json["total_flight_time"].get<float>();
+            // 解析 Sprite
+            data::SpriteBlueprint sprite = parse_sprite(data_json);
+            // 解析 Sound
+            data::SoundBlueprint sounds = parse_sound(data_json);
+            // 解析其它数据，组合蓝图并插入容器
+            projectile_blueprints_.emplace(id, data::ProjectileBlueprint{id, 
+                name, 
+                arc_height,
+                sf::seconds(total_flight_time),
+                std::move(sprite),
+                std::move(sounds)}
+            );
+        }
+    } catch (const std::exception& e) {
+        spdlog::error("加载投射物数据时出错: {}", e.what());
         return false;
     }
     return true;
@@ -107,7 +146,22 @@ const data::EnemyClassBlueprint& BlueprintManager::get_enemy_class_blueprint(ent
     return enemy_class_blueprints_.begin()->second;
 }
 
+const data::ProjectileBlueprint& BlueprintManager::get_projectile_blueprint(entt::id_type id) const {
+    if (auto it = projectile_blueprints_.find(id); it != projectile_blueprints_.end()) {
+        return it->second;
+    }
+    spdlog::error("未找到对应 id 的 ProjectileBlueprint: {}", id);
+    return projectile_blueprints_.begin()->second;
+}
+
 // --- 拆分步骤的私有解析函数 ---
+
+entt::id_type BlueprintManager::parse_projectile_id(const nlohmann::json& json) {
+    if (json.contains("projectile")) {
+        return entt::hashed_string(json["projectile"].get<std::string>().c_str());
+    }
+    return entt::null;
+}
 
 data::StatsBlueprint BlueprintManager::parse_stats(const nlohmann::json& json) {
     return data::StatsBlueprint{json["hp"].get<float>(), 

@@ -4,6 +4,8 @@
 #include "game/component/blocked_by_component.hpp"
 #include "game/component/target_component.hpp"
 #include "game/component/stats_component.hpp"
+#include "game/component/projectile_component.hpp"
+#include "engine/component/transform_component.hpp"
 #include "game/defs/tags.hpp"
 #include "game/defs/events.hpp"
 #include <entt/entity/registry.hpp>
@@ -30,6 +32,8 @@ void AnimationEventSystem::on_animation_event(const engine::utils::AnimationEven
     // 根据不同的事件id，调用不同的处理函数
     if (event.event_name_id_ == "hit"_hs) {
         handle_hit_event(event);
+    } else if (event.event_name_id_ == "emit"_hs) {
+        handle_emit_event(event);
     }
     // TODO: 其他事件类型
 }
@@ -63,6 +67,30 @@ void AnimationEventSystem::handle_hit_event(const engine::utils::AnimationEvent&
         // NOTE: 只有远程敌人才有Target组件，但远程攻击动画事件id为"emit"，不在这里处理
         // NOTE: 敌人命中事件不播放音效，未来如果需要可以补充
     }
+}
+
+void AnimationEventSystem::handle_emit_event(const engine::utils::AnimationEvent& event) {
+    // 发射事件：从角色身上找到投射物id，并执行发射投射物事件
+    if (!registry_.valid(event.entity_)) return;
+
+    // 一次获取所有必要（且肯定存在的）组件
+    const auto& [transform, stats, projectile_id] = registry_.get<engine::component::TransformComponent,
+        game::component::StatsComponent,
+        game::component::ProjectileIDComponent>(event.entity_);
+
+    // 确认“目标组件”依然存在，且其中的实体也有效
+    auto target = registry_.try_get<game::component::TargetComponent>(event.entity_);
+    if (!target || !registry_.valid(target->entity_)) return;
+
+    // 发射投射物事件
+    dispatcher_.enqueue(game::defs::EmitProjectileEvent{projectile_id.id_,
+        target->entity_,
+        transform.position_,
+        registry_.get<engine::component::TransformComponent>(target->entity_).position_,
+        stats.atk_});
+
+    // 播放“emit”音效
+    dispatcher_.enqueue(engine::utils::PlaySoundEvent{event.entity_, "emit"_hs});
 }
 
 } // namespace game::system

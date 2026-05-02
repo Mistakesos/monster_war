@@ -19,12 +19,12 @@ struct TransformComponent {
                                 sf::Vector2f origin = {0.f, 0.f})
         : position_{std::move(position)}
         , scale_{std::move(scale)}
-        , angle_{std::move(angle)}
+        , rotation_{std::move(angle)}
         , origin_{std::move(origin)} {}
   
     sf::Vector2f position_ = {0.f, 0.f};        ///< @brief 位置
     sf::Vector2f scale_ = {1.f, 1.f};           ///< @brief 缩放
-    sf::Angle angle_ = sf::degrees(0.f);        ///< @brief 角度制，单位：度（约定，实际上也支持弧度）
+    sf::Angle rotation_ = sf::degrees(0.f);     ///< @brief 角度制，单位：度（约定，实际上也支持弧度）
     sf::Vector2f origin_ = {0.f, 0.f};          ///< @brief 原点
 };
 } // namespace engine::component
