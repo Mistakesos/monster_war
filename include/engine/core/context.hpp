@@ -1,5 +1,5 @@
 #pragma once
-#include "entt/signal/fwd.hpp"
+#include <entt/signal/fwd.hpp>
 
 // 前置声明核心系统
 namespace engine::input {

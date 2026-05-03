@@ -1,5 +1,4 @@
 #include "engine/ui/ui_panel.hpp"
-#include "engine/render/camera.hpp"
 #include "engine/core/context.hpp"
 #include "engine/render/render.hpp"
 #include <spdlog/spdlog.h>

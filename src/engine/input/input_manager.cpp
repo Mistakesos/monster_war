@@ -1,10 +1,9 @@
 #include "engine/input/input_manager.hpp"
 #include "engine/core/config.hpp"
 #include "engine/utils/events.hpp"
-#include "entt/signal/dispatcher.hpp"
+#include "entt/signal/dispatcher.hpp"   // IWYU pragma: keep
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <spdlog/spdlog.h>
-#include <optional>
 #include <ranges>
 
 namespace engine::input {

@@ -1,11 +1,9 @@
 #pragma once
-#include <string_view>
-#include <unordered_map>
 #include <vector>
 #include <memory>
 #include <optional>
 #include <SFML/Audio.hpp>
-#include "entt/entity/fwd.hpp"
+#include <entt/entity/fwd.hpp>
 
 namespace engine::resource {
     class ResourceManager;

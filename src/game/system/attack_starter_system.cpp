@@ -2,7 +2,6 @@
 #include "game/component/enemy_component.hpp"
 #include "game/component/player_component.hpp"
 #include "game/component/blocked_by_component.hpp"
-#include "game/component/stats_component.hpp"
 #include "game/component/target_component.hpp"
 #include "game/defs/tags.hpp"
 #include "engine/component/velocity_component.hpp"

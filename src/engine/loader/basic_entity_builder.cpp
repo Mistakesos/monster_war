@@ -6,7 +6,6 @@
 #include "engine/component/sprite_component.hpp"
 #include "engine/component/transform_component.hpp"
 #include "engine/component/render_component.hpp"
-#include "engine/resource/resource_manager.hpp"
 #include <entt/entt.hpp>
 #include <spdlog/spdlog.h>
 
@@ -136,7 +135,7 @@ void BasicEntityBuilder::build_transform() {
         auto map_size = level_loader_.get_map_size();
         auto tile_size = level_loader_.get_tile_size();
         position_ = sf::Vector2f((index_ % map_size.x) * tile_size.x, 
-                             (index_ / map_size.x) * tile_size.y);
+                             static_cast<int>(index_ / map_size.x) * tile_size.y);
     }
 
     // 添加 TransformComponent

@@ -1,11 +1,9 @@
 #include "engine/render/camera.hpp"
-#include "engine/component/transform_component.hpp"
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Time.hpp>
 #include <entt/signal/dispatcher.hpp>
 #include <spdlog/spdlog.h>
 #include <algorithm>
-#include <cmath>
 
 namespace engine::render {
 Camera::Camera(sf::RenderWindow* window, entt::dispatcher* dispatcher, std::optional<sf::FloatRect> limit_bounds)

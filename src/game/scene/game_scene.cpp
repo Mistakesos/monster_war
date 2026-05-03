@@ -1,8 +1,6 @@
 #include "game/scene/game_scene.hpp"
 #include "engine/input/input_manager.hpp"
 #include "engine/render/camera.hpp"
-#include "engine/resource/resource_manager.hpp"
-#include "engine/audio/audio_player.hpp"
 
 #include "game/component/player_component.hpp"
 #include "game/component/stats_component.hpp"

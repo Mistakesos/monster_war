@@ -3,7 +3,7 @@
 #include "engine/core/context.hpp"
 #include "engine/core/game_state.hpp"
 #include "engine/scene/scene_manager.hpp"
-#include "entt/signal/dispatcher.hpp"
+#include "entt/signal/dispatcher.hpp"   // IWYU pragma: keep
 #include <spdlog/spdlog.h>
 
 namespace engine::scene {

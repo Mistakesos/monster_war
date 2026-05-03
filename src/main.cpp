@@ -2,7 +2,7 @@
 #include "engine/core/context.hpp"
 #include "engine/utils/events.hpp"
 #include "game/scene/game_scene.hpp"
-#include "entt/signal/dispatcher.hpp"
+#include "entt/signal/dispatcher.hpp"   // IWYU pragma: keep
 #include <spdlog/spdlog.h>
 
 int main(int, char*[]) {

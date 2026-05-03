@@ -1,7 +1,7 @@
 #include "engine/scene/scene_manager.hpp"
 #include "engine/core/context.hpp"
 #include "engine/scene/scene.hpp"
-#include "entt/signal/dispatcher.hpp"
+#include "entt/signal/dispatcher.hpp"   // IWYU pragma: keep
 #include <spdlog/spdlog.h>
 
 namespace engine::scene {
