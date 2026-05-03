@@ -16,6 +16,7 @@
 #include "game/component/class_name_component.hpp"
 #include "game/component/blocker_component.hpp"
 #include "game/component/projectile_component.hpp"
+#include <SFML/Graphics/Rect.hpp>
 #include <entt/entity/registry.hpp>
 #include <entt/core/hashed_string.hpp>
 #include <spdlog/spdlog.h>
@@ -58,7 +59,8 @@ entt::entity EntityFactory::create_player_unit(entt::id_type class_id, const sf:
     // 补充其他必要组件
     registry_.emplace<game::component::ClassNameComponent>(entity, class_id, blueprint.display_info_.name_);
     registry_.emplace<engine::component::RenderComponent>(entity);
-    
+    registry_.emplace<game::defs::HasHealthBarTag>(entity);
+
     // 未来可添加其它组件
 
     return entity;
@@ -92,6 +94,7 @@ entt::entity EntityFactory::create_enemy_unit(entt::id_type class_id, const sf::
     // 补充其他必要组件
     registry_.emplace<game::component::ClassNameComponent>(entity, class_id, blueprint.display_info_.name_);
     registry_.emplace<engine::component::RenderComponent>(entity);  // 使用默认主图层
+    registry_.emplace<game::defs::HasHealthBarTag>(entity);
     
     // 未来可添加其它组件
 
@@ -125,6 +128,24 @@ entt::entity EntityFactory::create_projectile(entt::id_type id, const sf::Vector
 }
 void EntityFactory::add_transform_component(entt::entity entity, const sf::Vector2f& position, const sf::Vector2f& scale, sf::Angle rotation) {
     registry_.emplace<engine::component::TransformComponent>(entity, position, scale, rotation);
+}
+
+entt::entity EntityFactory::create_enemy_dead_effect(entt::id_type class_id, const sf::Vector2f& position, const bool is_flipped) {
+    auto entity = registry_.create();
+    const auto& blueprint = blueprint_manager_.get_enemy_class_blueprint(class_id);
+    // 添加Transform组件
+    add_transform_component(entity, position);
+
+    // 添加Sprite组件
+    add_sprite_component(entity, blueprint.sprite_, is_flipped);
+
+    // 添加Animation组件(死亡动画名称为“damage”)
+    add_one_animation_component(entity, blueprint.animations_.at("damage"_hs), blueprint.sprite_, "damage"_hs);
+
+    // 补充其他必要组件
+    registry_.emplace<engine::component::RenderComponent>(entity);
+    registry_.emplace<game::defs::OneShotRemoveTag>(entity);
+    return entity;
 }
 
 void EntityFactory::add_sprite_component(entt::entity entity, const data::SpriteBlueprint& sprite, const bool is_flipped) {
@@ -180,6 +201,28 @@ void EntityFactory::add_animation_component(entt::entity entity,
     if (it != anim_component.animations_.end() && !it->second.frames_.empty()) {
         sprite_component.sprite_.setTextureRect(it->second.frames_[0].src_rect_);
     }
+}
+
+void EntityFactory::add_one_animation_component(entt::entity entity,
+                                                const data::AnimationBlueprint& animation_blueprint, 
+                                                const data::SpriteBlueprint& sprite_blueprint,
+                                                entt::id_type animation_id,
+                                                bool loop ) {
+    // 创建动画帧容器
+    std::vector<engine::component::AnimationFrame> frames;
+    // 依次读取动画蓝图中每一个动画帧，并插入容器
+    for (const auto& frame_index : animation_blueprint.frames_) {
+        sf::IntRect source_rect = static_cast<sf::IntRect>(sprite_blueprint.src_rect_);
+        source_rect.position.x += frame_index * source_rect.size.x;
+        source_rect.position.y += animation_blueprint.row_ * source_rect.size.y;
+        frames.emplace_back(source_rect, animation_blueprint.frame_duration_);
+    }
+    // 创建动画map容器
+    std::unordered_map<entt::id_type, engine::component::Animation> animations;
+    // 将创建好的动画帧容器插入动画map容器 (只有一个动画)
+    animations.emplace(animation_id, engine::component::Animation(std::move(frames), animation_blueprint.events_, loop));
+    // 通过动画map容器创建动画组件
+    registry_.emplace<engine::component::AnimationComponent>(entity, std::move(animations), animation_id);
 }
 
 void EntityFactory::add_stats_component(entt::entity entity, const data::StatsBlueprint& stats, int level, int rarity) {

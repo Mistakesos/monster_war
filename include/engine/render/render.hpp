@@ -2,8 +2,7 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/Color.hpp>
-#include <string>
-#include <optional>
+#include <string_view>
 #include <entt/core/fwd.hpp>          // 新增：用于 entt::id_type
 
 namespace sf {
@@ -101,6 +100,12 @@ public:
                     , sf::Vector2f position
                     , sf::Color font_color = sf::Color::White
     );
+
+    /**
+     * @brief 绘制空心矩形
+     * @param color 边框颜色
+     */
+    void draw_ui_rect(const Camera& camera, const sf::FloatRect& rect, sf::Color color);
 
     /**
      * @brief 绘制填充矩形

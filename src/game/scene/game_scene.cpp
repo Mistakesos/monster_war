@@ -21,6 +21,8 @@
 #include "game/system/animation_event_system.hpp"
 #include "game/system/combat_resolve_system.hpp"
 #include "game/system/projectile_system.hpp"
+#include "game/system/effect_system.hpp"
+#include "game/system/health_bar_system.hpp"
 
 #include "engine/loader/level_loader.hpp"
 #include "game/loader/entity_builder_mw.hpp"
@@ -150,6 +152,8 @@ bool GameScene::init_systems() {
     animation_event_system_ = std::make_unique<game::system::AnimationEventSystem>(registry_, dispatcher);
     combat_resolve_system_ = std::make_unique<game::system::CombatResolveSystem>(registry_, dispatcher);
     projectile_system_ = std::make_unique<game::system::ProjectileSystem>(registry_, dispatcher, *entity_factory_);
+    effect_system_ = std::make_unique<game::system::EffectSystem>(registry_, dispatcher, *entity_factory_);
+    health_bar_system_ = std::make_unique<game::system::HealthBarSystem>();
     spdlog::info("systems 初始化完成");
     return true;
 }
@@ -240,7 +244,12 @@ void GameScene::update(sf::Time delta) {
 }
 
 void GameScene::render() {
+    auto& renderer = context_.get_renderer();
+    auto& camera = context_.get_camera();
+
+    // 注意渲染顺序，保证正确的遮盖关系
     render_system_->update(registry_, context_.get_renderer(), context_.get_camera());
+    health_bar_system_->update(registry_, renderer, camera);
 
     Scene::render();
 }

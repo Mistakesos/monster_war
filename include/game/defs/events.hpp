@@ -24,9 +24,16 @@ struct HealEvent {
 struct EmitProjectileEvent {
     entt::id_type id_{entt::null};          ///< @brief 投射物ID
     entt::entity target_{entt::null};       ///< @brief 目标实体
-    sf::Vector2f start_position_{};            ///< @brief 起始位置
-    sf::Vector2f target_position_{};           ///< @brief 目标位置
+    sf::Vector2f start_position_{};         ///< @brief 起始位置
+    sf::Vector2f target_position_{};        ///< @brief 目标位置
     float damage_{};                        ///< @brief 伤害
+};
+
+/// @brief 敌人死亡特效事件
+struct EnemyDeadEffectEvent {
+    entt::id_type class_id_{entt::null};   ///< @brief 敌人ID
+    sf::Vector2f position_{};              ///< @brief 位置
+    bool is_flipped_{false};               ///< @brief 是否翻转
 };
 
 }   // namespace game::defs

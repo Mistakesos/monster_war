@@ -1,6 +1,8 @@
 #include "engine/render/render.hpp"
 #include "engine/resource/resource_manager.hpp"
 #include "engine/render/camera.hpp"
+#include <SFML/Graphics/Color.hpp>
+#include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Graphics/Sprite.hpp>
@@ -162,11 +164,22 @@ void Renderer::draw_ui_text(const Camera& camera
     window_obs_->draw(text);
 }
 
+void Renderer::draw_ui_rect(const Camera& camera, const sf::FloatRect& rect, sf::Color color) {
+    window_obs_->setView(camera.get_ui_view());
+    sf::RectangleShape shape;
+    shape.setOutlineThickness(1.f);
+    shape.setFillColor(sf::Color::Transparent);
+    shape.setPosition({rect.position});
+    shape.setSize({rect.size});
+    shape.setOutlineColor(color);
+    window_obs_->draw(shape);
+}
+
 void Renderer::draw_ui_filled_rect(const Camera& camera, const sf::FloatRect& rect, sf::Color color) {
     window_obs_->setView(camera.get_ui_view());
     sf::RectangleShape shape;
-    shape.setPosition({rect.position.x, rect.position.y});
-    shape.setSize({rect.size.x, rect.size.y});
+    shape.setPosition({rect.position});
+    shape.setSize({rect.size});
     shape.setFillColor(color);
     window_obs_->draw(shape);
 }
