@@ -3,6 +3,7 @@
 #include "engine/system/fwd.hpp"
 #include "game/system/fwd.hpp"
 #include "game/data/waypoint_node.hpp"
+#include "game/data/session_data.hpp"
 #include "game/defs/events.hpp"
 #include <memory>
 
@@ -24,6 +25,7 @@ public:
     void render() override;
 
 private:
+    [[nodiscard]] bool init_session_data();
     [[nodiscard]] bool load_level();
     [[nodiscard]] bool init_event_connections();
     [[nodiscard]] bool init_input_connections();
@@ -34,6 +36,7 @@ private:
     void on_enemy_arrive_home(const game::defs::EnemyArriveHomeEvent& event);
 
     // 测试函数
+    void test_session_data();
     void create_test_enemy();
     bool on_create_test_player_melee();
     bool on_create_test_player_ranged();
@@ -67,5 +70,10 @@ private:
 
     // 管理数据的实例很可能同时被多个场景使用，因此使用共享指针
     std::shared_ptr<game::factory::BlueprintManager> blueprint_manager_;// 蓝图管理器，负责管理蓝图数据
+    std::shared_ptr<game::data::SessionData> session_data_;             // 会话数据，关卡切换时需要传递的数据
+
+    // --- 其他场景数据 ---
+    int level_number_{1};
 };
+
 }

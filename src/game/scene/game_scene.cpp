@@ -42,6 +42,11 @@ using namespace entt::literals;
 namespace game::scene {
 GameScene::GameScene(engine::core::Context& context)
     : Scene{"GameScene", context} {
+    if (!init_session_data()) {
+        spdlog::error("初始化session_data_失败");
+        return;
+    }
+
     if (!load_level()) {
         spdlog::error("加载关卡失败！");
     }
@@ -66,6 +71,7 @@ GameScene::GameScene(engine::core::Context& context)
         return;
     }
 
+    test_session_data();
     create_test_enemy();
 
     spdlog::info("GameScene 构造完成");
@@ -80,6 +86,18 @@ GameScene::~GameScene() {
     input_manager.on_action(Action::MouseRight).disconnect<&GameScene::on_create_test_player_melee>(this);
     input_manager.on_action(Action::MouseLeft).disconnect<&GameScene::on_create_test_player_ranged>(this);
     input_manager.on_action(Action::Pause).disconnect<&GameScene::on_clear_all_players>(this);
+}
+
+bool GameScene::init_session_data() {
+    if (!session_data_) {
+        session_data_ = std::make_shared<game::data::SessionData>();
+        if (!session_data_->load_default_data()) {
+            spdlog::error("初始化session_data_失败");
+            return false;
+        }
+    }
+    level_number_ = session_data_->get_level_number();
+    return true;
 }
 
 bool GameScene::load_level() {
@@ -161,6 +179,15 @@ bool GameScene::init_systems() {
 void GameScene::on_enemy_arrive_home(const game::defs::EnemyArriveHomeEvent&) {
     spdlog::info("敌人到达基地");
     // TODO: 添加敌人到达基地的逻辑
+}
+
+void GameScene::test_session_data() {
+    spdlog::info("关卡号: {}", level_number_);
+    spdlog::info("积分: {}", session_data_->get_point());
+    spdlog::info("是否通关: {}", session_data_->is_level_clear());
+    for (auto& unit : session_data_->get_unit_map()) {
+        spdlog::info("角色名: {}, 职业: {}, 等级: {}, 稀有度: {}", unit.second.name_, unit.second.class_, unit.second.level_, unit.second.rarity_);
+    }
 }
 
 void GameScene::create_test_enemy() {
