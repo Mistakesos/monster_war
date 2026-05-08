@@ -1,44 +1,36 @@
 #include "engine/ui/ui_button.hpp"
 #include "engine/ui/state/ui_normal_state.hpp"
-#include "engine/core/context.hpp"
-#include "engine/resource/resource_manager.hpp"
-#include <spdlog/spdlog.h>
 #include <entt/core/hashed_string.hpp>
+#include <spdlog/spdlog.h>
 
 using namespace entt::literals;
 
 namespace engine::ui {
-UIButton::UIButton(engine::core::Context& context
-                 , std::string_view normal_sprite_id
-                 , std::string_view hover_sprite_id
-                 , std::string_view pressed_sprite_id
-                 , sf::Vector2f position
-                 , sf::Vector2f size
-                 , std::function<void()> callback)
+UIButton::UIButton(engine::core::Context& context,
+                   sf::Sprite normal_sprite, 
+                   sf::Sprite hover_sprite, 
+                   sf::Sprite pressed_sprite, 
+                   sf::Vector2f position, 
+                   sf::Vector2f size, 
+                   std::function<void()> click_callback,
+                   std::function<void()> hover_enter_callback,
+                   std::function<void()> hover_leave_callback)
     : UIInteractive{context
-                  , std::move(position)
-                  , std::move(size)}
-    , callback_{std::move(callback)} {
-    auto& resource_manager = context.get_resource_manager();
-    auto tex_normal = resource_manager.get_texture(entt::hashed_string{normal_sprite_id.data(), normal_sprite_id.size()});
-    auto tex_hover = resource_manager.get_texture(entt::hashed_string{hover_sprite_id.data(), hover_sprite_id.size()});
-    auto tex_pressed = resource_manager.get_texture(entt::hashed_string{pressed_sprite_id.data(), pressed_sprite_id.size()});
-    add_sprite("normal"_hs, std::make_unique<sf::Sprite>(*tex_normal));
-    add_sprite("hover"_hs, std::make_unique<sf::Sprite>(*tex_hover));
-    add_sprite("pressed"_hs, std::make_unique<sf::Sprite>(*tex_pressed));
+    , std::move(position)
+    , std::move(size)}
+                 , click_callback_{std::move(click_callback)}
+                 , hover_enter_callback_{std::move(hover_enter_callback)}
+                 , hover_leave_callback_{std::move(hover_leave_callback)} {
+    // 注意正常、悬浮、按下都有默认的键名称，如果需要替换的话则覆盖该键下的值
+    add_sprite("normal"_hs, normal_sprite);
+    add_sprite("hover"_hs, hover_sprite);
+    add_sprite("pressed"_hs, pressed_sprite);
 
     // 设置默认状态为"normal"
-    set_state(std::make_unique<engine::ui::state::UINormalState>(this));
+    set_current_state(std::make_unique<engine::ui::state::UINormalState>(this));
 
-    // 设置默认音效
-    add_sound("hover"_hs, "assets/audio/button_hover.wav"_hs);
-    add_sound("pressed"_hs, "assets/audio/button_click.wav"_hs);
     spdlog::trace("UIButton 构造完成");
 }
 
-void UIButton::clicked() {
-    if (callback_) {
-        callback_();
-    }
-}
 } // namespace engine::ui
+

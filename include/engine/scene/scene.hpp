@@ -42,7 +42,6 @@ public:
     // 核心循环方法
     virtual void update(sf::Time delta);        ///< @brief 更新场景。
     virtual void render();                      ///< @brief 渲染场景。
-    virtual void handle_input();                ///< @brief 处理输入。
 
     /// @brief 请求弹出当前场景
     void request_pop_scene();

@@ -14,6 +14,6 @@ public:
     ~UINormalState() override = default;
 
 private:
-    void handle_input(engine::core::Context& context) override;
+    void update(sf::Time delta, engine::core::Context& context) override;
 };
 } // namespace engine::ui::state

@@ -21,9 +21,9 @@ Game::Game()
     , dispatcher_{std::make_unique<entt::dispatcher>()}
     , time_{std::make_unique<Time>()}
     , resource_manager_{std::make_unique<engine::resource::ResourceManager>()}
-    , input_manager_{std::make_unique<engine::input::InputManager>(window_.get(), config_.get(), dispatcher_.get())}
-    , renderer_{std::make_unique<engine::render::Renderer>(window_.get(), resource_manager_.get())}
     , camera_{std::make_unique<engine::render::Camera>(window_.get(), dispatcher_.get())}
+    , input_manager_{std::make_unique<engine::input::InputManager>(window_.get(), config_.get(), dispatcher_.get(), camera_.get())}
+    , renderer_{std::make_unique<engine::render::Renderer>(window_.get(), resource_manager_.get())}
     , audio_player_{std::make_unique<engine::audio::AudioPlayer>(resource_manager_.get())}
     , game_state_{std::make_unique<engine::core::GameState>(window_.get())}
     , context_{std::make_unique<engine::core::Context>(*dispatcher_
@@ -43,6 +43,9 @@ Game::Game()
     camera_->set_ui_view_sizs(static_cast<sf::Vector2f>(config_->window_size_));
     camera_->set_world_view_center(camera_->get_world_view_size() / 2.f);
     camera_->set_ui_view_center(camera_->get_ui_view_size() / 2.f);
+
+    // 设置逻辑尺寸（与 ui_view 大小一致，供 UI 定位使用）
+    game_state_->set_logical_size(static_cast<sf::Vector2f>(config_->window_size_));
     
     // 加载初始资源（载入默认资源映射文件）
     resource_manager_->load_resource("assets/data/resource_mapping.json");
@@ -100,8 +103,6 @@ void Game::handle_event() {
     while (std::optional event = window_->pollEvent()) {
         input_manager_->handle_event(*event);
     }
-
-    scene_manager_->handle_input();
 }
 
 void Game::update(sf::Time delta) {

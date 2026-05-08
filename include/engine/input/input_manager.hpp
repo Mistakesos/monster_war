@@ -19,6 +19,10 @@ namespace engine::core {
     class Config;
 } // namespace engine::core
 
+namespace engine::render {
+    class Camera;
+} // namespace engine::render
+
 namespace engine::input {
 enum class ActionState {
     Pressed,       ///< @brief 动作在本帧刚刚按下
@@ -29,7 +33,7 @@ enum class ActionState {
 
 class InputManager final {
 public:
-    InputManager(sf::RenderWindow* window, const engine::core::Config* config, entt::dispatcher* dispatcher);
+    InputManager(sf::RenderWindow* window, const engine::core::Config* config, entt::dispatcher* dispatcher, engine::render::Camera* camera);
     ~InputManager() = default;
     
     /**
@@ -76,6 +80,7 @@ private:
 
     bool is_full_screen_ = false;        ///< @brief 是否全屏
     entt::dispatcher* dispatcher_;
+    engine::render::Camera* camera_obs_ = nullptr;  ///< @brief 相机的非拥有指针，用于坐标转换
 };
 } // namespace engine::input
 

@@ -10,24 +10,8 @@ UIElement::UIElement(sf::Vector2f position, sf::Vector2f size)
     , size_{std::move(size)} {
 }   
 
-bool UIElement::handle_input(engine::core::Context& context) {
-    // 如果元素不可见，直接返回 false
-    if (!visible_) return false; 
-
-    // 遍历所有子节点，并删除标记了移除的元素
-    for (auto it = children_.begin(); it != children_.end();) {
-        if (*it && !(*it)->is_need_remove()) {
-            if ((*it)->handle_input(context)) return true;
-            ++it;
-        } else {
-            it = children_.erase(it);
-        }
-    }
-    // 事件未被消耗，返回假
-    return false;
-}
-
 void UIElement::update(sf::Time delta, engine::core::Context& context) {
+    // 如果元素不可见，直接返回 false
     if (!visible_) return;
 
     // 遍历所有子节点，并删除标记了移除的元素
@@ -50,9 +34,12 @@ void UIElement::render(engine::core::Context& context) {
     }
 }
 
-void UIElement::add_child(std::unique_ptr<UIElement> child) {
+void UIElement::add_child(std::unique_ptr<UIElement> child, int order_index) {
     if (child) {
         child->set_parent(this); // 设置父指针
+        if (order_index >= 0) {
+            child->set_order_index(order_index);
+        }
         children_.push_back(std::move(child));
     }
 }
@@ -73,6 +60,20 @@ std::unique_ptr<UIElement> UIElement::remove_child(UIElement* child_ptr) {
     return nullptr; // 未找到子元素
 }
 
+std::unique_ptr<UIElement> UIElement::remove_child_by_id(entt::id_type id) {
+    auto it = std::find_if(children_.begin(), children_.end(),
+                           [id](const std::unique_ptr<UIElement>& p) { 
+                                return p->get_id() == id; 
+                           });
+    if (it != children_.end()) {
+        std::unique_ptr<UIElement> removed_child = std::move(*it);
+        children_.erase(it);
+        removed_child->set_parent(nullptr);      // 清除父指针
+        return removed_child;                    // 返回被移除的子元素（可以挂载到别处）
+    }
+    return nullptr; // 未找到子元素
+}
+
 void UIElement::remove_all_children() {
     for (auto& child : children_) {
         child->set_parent(nullptr); // 清除父指针
@@ -80,11 +81,29 @@ void UIElement::remove_all_children() {
     children_.clear();
 }
 
+UIElement* UIElement::get_child_by_id(entt::id_type id) const {
+    auto it = std::find_if(children_.begin(), children_.end(),
+                           [id](const std::unique_ptr<UIElement>& p) { 
+                                return p->get_id() == id; 
+                           });
+    if (it != children_.end()) {
+        return it->get();
+    }
+    return nullptr; // 未找到子元素
+}
+
 sf::Vector2f UIElement::get_screen_position() const {
     if (parent_obs_) {
         return parent_obs_->get_screen_position() + position_;
     }
     return position_; // 根元素的位置已经是相对屏幕的绝对位置
+}
+
+void UIElement::sort_children_by_order_index() {
+    // 使用stable_sort避免破坏原来相等元素的顺序
+    std::stable_sort(children_.begin(), children_.end(), [](const std::unique_ptr<UIElement>& a, const std::unique_ptr<UIElement>& b) {
+        return a->get_order_index() < b->get_order_index();
+    });
 }
 
 sf::FloatRect UIElement::get_bounds() const {

@@ -2,7 +2,6 @@
 #include "engine/ui/ui_element.hpp"
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/Rect.hpp>
-#include <string>
 #include <string_view>
 #include <optional>
 #include <entt/entity/entity.hpp>
@@ -52,6 +51,15 @@ public:
           , const std::optional<sf::IntRect>& texture_rect = std::nullopt
           , bool is_flipped = false);
 
+    /**
+     * @brief 兼容原来的构造方式，直接传入纹理引用。（对应教程中的 Sprite 直接构造）
+     */
+    UIImage(sf::Sprite sprite
+          , sf::Vector2f position = sf::Vector2f{0.f, 0.f}
+          , sf::Vector2f size = sf::Vector2f{0.f, 0.f}
+          , const std::optional<sf::IntRect>& texture_rect = std::nullopt
+          , bool is_flipped = false);
+          
     ~UIImage() override = default;
 
     // --- 核心方法 ---

@@ -48,14 +48,6 @@ void SceneManager::render() {
     }
 }
 
-void SceneManager::handle_input() {
-    // 只考虑栈顶场景
-    Scene* current_scene = get_current_scene();
-    if (current_scene) {
-        current_scene->handle_input();
-    }
-}
-
 void SceneManager::on_pop_scene() {
     pending_action_ = PendingAction::Pop;
 }

@@ -1,6 +1,4 @@
 #pragma once
-#include <optional>
-#include <string>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Vector2.hpp>
 
@@ -49,5 +47,6 @@ public:
 private:    
     sf::RenderWindow* window_obs_ = nullptr;              ///< @brief SFML 窗口，用于获取窗口大小
     State current_state_ = State::Title;        ///< @brief 当前游戏状态
+    sf::Vector2f logical_size_{1280.f, 720.f};  ///< @brief 逻辑坐标尺寸（与 ui_view 大小一致）
 };
 } // namespace engine::core

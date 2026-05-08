@@ -82,9 +82,9 @@ private:
     std::unique_ptr<entt::dispatcher> dispatcher_;                              ///< @brief 事件分发器
     std::unique_ptr<engine::core::Time> time_;                                  ///< @brief 时间组件
     std::unique_ptr<engine::resource::ResourceManager> resource_manager_;       ///< @brief 资源管理器组件
+    std::unique_ptr<engine::render::Camera> camera_;                            ///< @brief 摄像机组件
     std::unique_ptr<engine::input::InputManager> input_manager_;                ///< @brief 输入管理器组件
     std::unique_ptr<engine::render::Renderer> renderer_;                        ///< @brief 渲染器组件
-    std::unique_ptr<engine::render::Camera> camera_;                            ///< @brief 摄像机组件
     std::unique_ptr<engine::audio::AudioPlayer> audio_player_;                  ///< @brief 音频播放组件
     std::unique_ptr<engine::core::GameState> game_state_;                       ///< @brief 游戏状态组件
     std::unique_ptr<engine::core::Context> context_;                            ///< @brief ！上下文组件，最后初始化的组件

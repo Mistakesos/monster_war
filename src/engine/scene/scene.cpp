@@ -27,11 +27,6 @@ void Scene::render() {
     ui_manager_->render(context_);
 }
 
-void Scene::handle_input() {
-    // 处理UI管理器输入
-    if (ui_manager_->handle_input(context_)) return;   // 如果输入事件被UI处理则返回，不再处理游戏对象输入
-}
-
 void Scene::request_pop_scene() {
     context_.get_dispatcher().trigger<engine::utils::PopSceneEvent>();
 }

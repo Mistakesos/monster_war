@@ -1,5 +1,6 @@
 #include "engine/input/input_manager.hpp"
 #include "engine/core/config.hpp"
+#include "engine/render/camera.hpp"
 #include "engine/utils/events.hpp"
 #include "entt/signal/dispatcher.hpp"   // IWYU pragma: keep
 #include <SFML/Graphics/RenderWindow.hpp>
@@ -8,11 +9,12 @@
 
 namespace engine::input {
 
-InputManager::InputManager(sf::RenderWindow* window, const engine::core::Config* config, entt::dispatcher* dispatcher)
+InputManager::InputManager(sf::RenderWindow* window, const engine::core::Config* config, entt::dispatcher* dispatcher, engine::render::Camera* camera)
     : window_obs_{window}
     , config_obs_{config}
     , action_to_input_copy_{config->action_to_input_}
-    , dispatcher_{dispatcher} {
+    , dispatcher_{dispatcher}
+    , camera_obs_{camera} {
 
     for (const auto& [action, _] : action_to_input_copy_) {
         action_states_.emplace(action, ActionState::Inactive);
@@ -144,10 +146,8 @@ sf::Vector2i InputManager::get_mouse_position_window() const {
 }
 
 sf::Vector2i InputManager::get_mouse_logical_position() const {
-    const sf::View& view = window_obs_->getView();
     sf::Vector2i mouse_position = get_mouse_position_window();
-    sf::Vector2f scale = view.getSize().componentWiseDiv(static_cast<sf::Vector2f>(window_obs_->getSize()));
-    sf::Vector2f logical_position = static_cast<sf::Vector2f>(mouse_position).componentWiseMul(scale);
+    sf::Vector2f logical_position = window_obs_->mapPixelToCoords(mouse_position, camera_obs_->get_ui_view());
     return static_cast<sf::Vector2i>(logical_position);
 }
 } // namespace engine::input

@@ -1,5 +1,5 @@
 #pragma once
-#include <memory>
+#include <SFML/System/Time.hpp>
 
 namespace engine::core {
     class Context;
@@ -10,6 +10,7 @@ namespace engine::ui {
 } // namespace engine::ui
 
 namespace engine::ui::state {
+
 /**
  * @brief 可交互UI元素在特定状态下的行为接口。
  *
@@ -18,6 +19,9 @@ namespace engine::ui::state {
  */
 class UIState {
     friend class engine::ui::UIInteractive;
+protected:
+    engine::ui::UIInteractive* owner_ = nullptr;    ///< @brief 指向父节点
+
 public:
     /**
      * @brief 构造函数传入父节点指针
@@ -31,21 +35,9 @@ public:
     UIState(UIState&&) = delete;
     UIState& operator=(UIState&&) = delete;
 
-    /**
-     * @brief 过渡到下一个状态，设置初始状态后无需重复传入 UIInteractive 指针
-     * @param Next 下一个状态类名
-     * @param Args 下一个状态的构造参数
-     */
-    template<typename Next, typename... Args>
-    void transition(Args&&... args) {
-        next_state_ = std::make_unique<Next>(owner_, std::forward<Args>(args)...);
-    }
-
 protected:
     // --- 核心方法 --- 
-    virtual void handle_input(engine::core::Context& context) = 0;
-
-    engine::ui::UIInteractive* owner_ = nullptr;    ///< @brief 指向父节点
-    std::unique_ptr<UIState> next_state_ = nullptr; ///< @brief 指向下一个节点的指针
+    virtual void update(sf::Time, engine::core::Context&) {}
 };
+
 } // namespace engine::ui::state

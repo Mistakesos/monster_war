@@ -18,8 +18,7 @@ UIImage::UIImage(engine::core::Context& context
     // 【注意】请将下面的 context.get_texture 替换为你实际资源管理器获取纹理的方法
     // 比如：context.get_resource_manager().get_texture(...)
     , sprite_{*context.get_resource_manager().get_texture(entt::hashed_string{texture_path.data()}.value())}
-    , texture_id_{entt::hashed_string{texture_path.data()}.value()}
-{
+    , texture_id_{entt::hashed_string{texture_path.data()}.value()} {
     if (texture_rect.has_value()) {
         sprite_.setTextureRect(texture_rect.value());
     }
@@ -35,8 +34,7 @@ UIImage::UIImage(engine::core::Context& context
                , bool is_flipped) 
     : UIElement{std::move(position), std::move(size)}
     , sprite_{*context.get_resource_manager().get_texture(texture_id)} // 现场解析哈希ID
-    , texture_id_{texture_id}
-{
+    , texture_id_{texture_id} {
     if (texture_rect.has_value()) {
         sprite_.setTextureRect(texture_rect.value());
     }
@@ -50,14 +48,26 @@ UIImage::UIImage(const sf::Texture& texture
                , const std::optional<sf::IntRect>& texture_rect
                , bool is_flipped) 
     : UIElement{std::move(position), std::move(size)}
-    , sprite_{texture} // 直接传入
-{
+    , sprite_{texture} {
     if (texture_rect.has_value()) {
         sprite_.setTextureRect(texture_rect.value());
     }
     set_flipped(is_flipped);
 }
 
+// --- 4. sprite 构造 ---
+UIImage::UIImage(sf::Sprite sprite
+               , sf::Vector2f position
+               , sf::Vector2f size
+               , const std::optional<sf::IntRect>& texture_rect
+               , bool is_flipped) 
+    : UIElement{std::move(position), std::move(size)}
+    , sprite_{sprite} {
+    if (texture_rect.has_value()) {
+        sprite_.setTextureRect(texture_rect.value());
+    }
+    set_flipped(is_flipped);
+}
 
 // --- 核心逻辑完全保留原样 ---
 void UIImage::render(engine::core::Context& context) {

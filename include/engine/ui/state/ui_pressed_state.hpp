@@ -11,9 +11,9 @@ class UIPressedState final: public UIState {
     friend class engine::ui::UIInteractive;
 public:
     UIPressedState(engine::ui::UIInteractive* owner);
-    ~UIPressedState() override = default;
+    ~UIPressedState() override;
 
 private:
-    void handle_input(engine::core::Context& context) override;
+    bool on_mouse_released();  ///< @brief 鼠标按下回调函数 (不再使用轮询“isActionPressed”)
 };
 } // namespace engine::ui::state

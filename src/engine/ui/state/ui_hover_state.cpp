@@ -12,19 +12,29 @@ using namespace entt::literals;
 namespace engine::ui::state {
 UIHoverState::UIHoverState(engine::ui::UIInteractive* owner)
     : UIState{owner} {
-    owner_->set_sprite("hover"_hs);
+    owner_->get_context().get_input_manager().on_action(Action::MouseLeft).connect<&UIHoverState::on_mouse_pressed>(this);
+
+    owner_->set_current_sprite("hover"_hs);
+    owner_->hover_enter();
     spdlog::debug("切换到悬停状态");
 }
 
-void UIHoverState::handle_input(engine::core::Context& context)
-{
+UIHoverState::~UIHoverState() {
+    owner_->get_context().get_input_manager().on_action(Action::MouseLeft).disconnect<&UIHoverState::on_mouse_pressed>(this);
+}
+
+void UIHoverState::update(sf::Time, engine::core::Context& context) {
     auto& input_manager = context.get_input_manager();
     auto mouse_pos = input_manager.get_mouse_logical_position();
-    if (!owner_->is_point_inside(static_cast<sf::Vector2f>(mouse_pos))) {                // 如果鼠标不在UI元素内，则返回正常状态
-        transition<UINormalState>();
-    }
-    if (input_manager.is_action_pressed(Action::MouseLeft)) {  // 如果鼠标按下，则返回按下状态
-        transition<UIPressedState>();
+    if (!owner_->is_point_inside(static_cast<sf::Vector2f>(mouse_pos))) {                // 如果鼠标不在UI元素内，则设置正常状态
+        owner_->hover_leave();
+        owner_->set_next_state(std::make_unique<UINormalState>(owner_));
     }
 }
+
+bool UIHoverState::on_mouse_pressed() {
+    owner_->set_next_state(std::make_unique<UIPressedState>(owner_));
+    return true;
+}
+
 } // namespace engine::ui::state

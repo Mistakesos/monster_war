@@ -2,7 +2,6 @@
 #include "engine/utils/events.hpp"
 #include <SFML/System/Time.hpp>
 #include <memory>
-#include <string>
 #include <vector>
 
 // 前置声明
@@ -36,7 +35,6 @@ public:
     // 核心循环函数
     void update(sf::Time delta_time);
     void render();
-    void handle_input();
 
 private:
     // 事件回调函数

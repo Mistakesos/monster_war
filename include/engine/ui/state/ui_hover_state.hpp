@@ -11,9 +11,11 @@ class UIHoverState final: public UIState {
     friend class engine::ui::UIInteractive;
 public:
     UIHoverState(engine::ui::UIInteractive* owner);
-    ~UIHoverState() override = default;
+    ~UIHoverState() override;
 
 private:
-    void handle_input(engine::core::Context& context) override;
+    void update(sf::Time delta, engine::core::Context& context) override;
+
+    bool on_mouse_pressed();  ///< @brief 鼠标按下回调函数 (不再使用轮询“isActionPressed”)
 };
 } // namespace engine::ui::state

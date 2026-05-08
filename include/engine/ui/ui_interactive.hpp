@@ -3,9 +3,8 @@
 #include "engine/ui/state/ui_state.hpp"
 #include <SFML/Graphics/Sprite.hpp>
 #include <entt/core/fwd.hpp>
-#include <entt/core/hashed_string.hpp>
+#include <entt/entity/fwd.hpp>
 #include <memory>
-#include <string>
 #include <unordered_map>
 
 namespace engine::core {
@@ -26,28 +25,36 @@ public:
     ~UIInteractive() override;
 
     virtual void clicked() {}       ///< @brief 如果有点击事件，则重写该方法
+    virtual void hover_enter() {}   ///< @brief 如果有悬停进入事件，则重写该方法
+    virtual void hover_leave() {}   ///< @brief 如果有悬停离开事件，则重写该方法
 
-    void add_sprite(entt::id_type name_id, std::unique_ptr<sf::Sprite> sprite);     ///< @brief 添加精灵
-    void set_sprite(entt::id_type name_id);                                         ///< @brief 设置当前显示的精灵
-    void add_sound(entt::id_type name_id, entt::hashed_string hashed_path);         ///< @brief 添加音效（预加载）
+    void add_sprite(entt::id_type name_id, sf::Sprite sprite);                     ///< @brief 添加/替换图片
+    void set_current_sprite(entt::id_type name_id);                                 ///< @brief 设置当前显示的图片
+
+    void set_hover_sound(entt::id_type id, std::string_view path = "");             ///< @brief 设置悬浮音效
+    void set_click_sound(entt::id_type id, std::string_view path = "");             ///< @brief 设置点击音效
     void play_sound(entt::id_type name_id);                                         ///< @brief 播放音效
+
     // --- Getters and Setters ---
-    void set_state(std::unique_ptr<engine::ui::state::UIState> state);              ///< @brief 设置当前状态
+    engine::core::Context& get_context() const { return context_; }
+    void set_current_state(std::unique_ptr<engine::ui::state::UIState> state);      ///< @brief 设置当前状态
+    void set_next_state(std::unique_ptr<engine::ui::state::UIState> state);         ///< @brief 设置下一个状态
     engine::ui::state::UIState* get_state() const { return current_state_.get(); }  ///< @brief 获取当前状态
 
     void set_interactive(bool interactive) { interactive_ = interactive; }          ///< @brief 设置是否可交互
     bool is_interactive() const { return interactive_; }                            ///< @brief 获取是否可交互
 
     // --- 核心方法 ---
-    bool handle_input(engine::core::Context& context) override;
+    void update(sf::Time delta, engine::core::Context& context) override;
     void render(engine::core::Context& context) override;
 
 protected:
-    engine::core::Context& context_;                                ///< @brief 可交互元素很可能需要其他引擎组件
-    std::unique_ptr<engine::ui::state::UIState> current_state_;     ///< @brief 当前状态
-    std::unordered_map<entt::id_type, std::unique_ptr<sf::Sprite>> sprites_; ///< @brief 精灵集合，键为名称ID
-    std::unordered_map<entt::id_type, entt::id_type> sounds_;       ///< @brief 音效集合，key为音效名称ID，value为音效ID（路径哈希）
-    entt::id_type current_sprite_id_;                  ///< @brief 当前显示的精灵ID
-    bool interactive_ = true;                                       ///< @brief 是否可交互
+    engine::core::Context& context_;                                            ///< @brief 可交互元素很可能需要其他引擎组件
+    std::unique_ptr<engine::ui::state::UIState> current_state_;                 ///< @brief 当前状态
+    std::unique_ptr<engine::ui::state::UIState> next_state_;                    ///< @brief 下一个状态，用于处理状态切换
+    std::unordered_map<entt::id_type, sf::Sprite> sprites_;                     ///< @brief 精灵集合，键为名称ID
+    std::unordered_map<entt::id_type, entt::id_type> sounds_;                   ///< @brief 音效集合，key为音效名称ID，value为音效ID（路径哈希）
+    entt::id_type current_sprite_id_;                                           ///< @brief 当前显示的精灵ID
+    bool interactive_ = true;                                                   ///< @brief 是否可交互
 };
 } // namespace engine::ui

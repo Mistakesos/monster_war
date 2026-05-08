@@ -5,7 +5,8 @@
 namespace engine::core {
 GameState::GameState(sf::RenderWindow* window, State initial_state)
     : window_obs_{window}
-    , current_state_{initial_state} {
+    , current_state_{initial_state}
+    , logical_size_{static_cast<sf::Vector2f>(window_obs_->getSize())} {
     if (window_obs_ == nullptr) {
         spdlog::error("窗口为空");
         throw std::runtime_error("窗口不能为空");
@@ -31,12 +32,11 @@ void GameState::set_window_size(sf::Vector2u new_size) {
 }
 
 sf::Vector2f GameState::get_logical_size() const {
-    return window_obs_->getView().getSize();
+    return logical_size_;
 }
 
 void GameState::set_logical_size(sf::Vector2f new_size) {
-    const auto& view = window_obs_->getView();
-    window_obs_->setView({view.getCenter(), new_size});
+    logical_size_ = new_size;
     spdlog::trace("逻辑分辨率设置为: {}x{}", new_size.x, new_size.y);
 }
 } // namespace engine::core

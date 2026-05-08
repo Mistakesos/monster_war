@@ -4,8 +4,13 @@
 #include "game/system/fwd.hpp"
 #include "game/data/waypoint_node.hpp"
 #include "game/data/session_data.hpp"
+#include "game/data/ui_config.hpp"
 #include "game/defs/events.hpp"
 #include <memory>
+
+namespace engine::ui {
+    class UIElement;
+} // namespace engine::ui
 
 namespace game::factory {
     class EntityFactory;
@@ -26,11 +31,17 @@ public:
 
 private:
     [[nodiscard]] bool init_session_data();
+    [[nodiscard]] bool init_ui_config();
     [[nodiscard]] bool load_level();
     [[nodiscard]] bool init_event_connections();
     [[nodiscard]] bool init_input_connections();
     [[nodiscard]] bool init_entity_factory();
     [[nodiscard]] bool init_systems();
+
+    void create_units_portrait_ui();       ///< @brief 创建画面下方的单位肖像UI
+
+    ///< @brief 排列画面下方的单位肖像UI (肖像增/减时调用)
+    void arrange_units_portrait_ui(engine::ui::UIElement* anchor_panel, const sf::Vector2f& frame_size, float padding);
 
     // 事件回调函数
     void on_enemy_arrive_home(const game::defs::EnemyArriveHomeEvent& event);
@@ -71,6 +82,7 @@ private:
     // 管理数据的实例很可能同时被多个场景使用，因此使用共享指针
     std::shared_ptr<game::factory::BlueprintManager> blueprint_manager_;// 蓝图管理器，负责管理蓝图数据
     std::shared_ptr<game::data::SessionData> session_data_;             // 会话数据，关卡切换时需要传递的数据
+    std::shared_ptr<game::data::UIConfig> ui_config_;                   // UI配置，负责管理UI数据
 
     // --- 其他场景数据 ---
     int level_number_{1};
