@@ -19,8 +19,8 @@ public:
      * @param size Panel的大小
      * @param background_color 背景色
      */
-    explicit UIPanel(sf::Vector2f position = {0.0f, 0.0f},
-                     sf::Vector2f size = {0.0f, 0.0f},
+    explicit UIPanel(sf::Vector2f position = {0.f, 0.f},
+                     sf::Vector2f size = {0.f, 0.f},
                      std::optional<sf::Color> background_color = std::nullopt);
 
     void set_background_color(const std::optional<sf::Color>& background_color) { background_color_ = background_color; }

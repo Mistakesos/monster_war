@@ -44,6 +44,7 @@ file(GLOB_RECURSE SRC_LIST CMAKE_CONFIGURE_DEPENDS
     ${PROJECT_SOURCE_DIR}/src/game/scene/*.cpp
     ${PROJECT_SOURCE_DIR}/src/game/loader/*.cpp
     ${PROJECT_SOURCE_DIR}/src/game/data/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/game/ui/*.cpp
     ${PROJECT_SOURCE_DIR}/src/game/factory/*.cpp
     ${PROJECT_SOURCE_DIR}/src/game/system/*.cpp
 )

@@ -9,6 +9,7 @@
 #include "engine/component/sprite_component.hpp"
 #include "game/defs/tags.hpp"
 #include "game/defs/events.hpp"
+#include "game/data/game_stats.hpp"
 #include <entt/entity/registry.hpp>
 #include <entt/signal/dispatcher.hpp>
 #include <spdlog/spdlog.h>
@@ -71,7 +72,14 @@ void CombatResolveSystem::on_attack_event(const game::defs::AttackEvent& event) 
             bool is_flipped = sprite.sprite_.getScale().x < 0 ? true : false;
             dispatcher_.enqueue(game::defs::EnemyDeadEffectEvent{class_name.class_id_, transform.position_, is_flipped});
 
-            // TODO: 更新统计信息
+            // 更新统计信息
+            auto& game_stats = registry_.ctx().get<game::data::GameStats&>();
+            game_stats.enemy_killed_count_++;       // 敌人击杀数量+1
+            if ((game_stats.enemy_killed_count_ + game_stats.enemy_arrived_count_) >= game_stats.enemy_count_) {
+                spdlog::warn("敌人全部死亡");
+                // TODO: 切换场景逻辑
+            }
+
             // 如果敌人被阻挡，减少阻挡者的阻挡计数
             if (auto blocked_by = registry_.try_get<game::component::BlockedByComponent>(event.target_); blocked_by) {
                 auto blocker_entity = blocked_by->entity_;

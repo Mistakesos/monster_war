@@ -4,13 +4,17 @@
 #include "game/system/fwd.hpp"
 #include "game/data/waypoint_node.hpp"
 #include "game/data/session_data.hpp"
+#include "game/data/game_stats.hpp"
 #include "game/data/ui_config.hpp"
-#include "game/defs/events.hpp"
 #include <memory>
 
 namespace engine::ui {
     class UIElement;
 } // namespace engine::ui
+
+namespace game::ui {
+    class UnitsPortraitUI;
+} // namespace game::ui
 
 namespace game::factory {
     class EntityFactory;
@@ -36,15 +40,9 @@ private:
     [[nodiscard]] bool init_event_connections();
     [[nodiscard]] bool init_input_connections();
     [[nodiscard]] bool init_entity_factory();
+    [[nodiscard]] bool init_registry_context();
+    [[nodiscard]] bool init_units_portrait_ui();
     [[nodiscard]] bool init_systems();
-
-    void create_units_portrait_ui();       ///< @brief 创建画面下方的单位肖像UI
-
-    ///< @brief 排列画面下方的单位肖像UI (肖像增/减时调用)
-    void arrange_units_portrait_ui(engine::ui::UIElement* anchor_panel, const sf::Vector2f& frame_size, float padding);
-
-    // 事件回调函数
-    void on_enemy_arrive_home(const game::defs::EnemyArriveHomeEvent& event);
 
     // 测试函数
     void test_session_data();
@@ -73,9 +71,13 @@ private:
     std::unique_ptr<game::system::ProjectileSystem> projectile_system_;
     std::unique_ptr<game::system::EffectSystem> effect_system_;
     std::unique_ptr<game::system::HealthBarSystem> health_bar_system_;
+    std::unique_ptr<game::system::GameRuleSystem> game_rule_system_;
+
+    std::unique_ptr<game::ui::UnitsPortraitUI> units_portrait_ui_;      // 封装的单位肖像UI，负责管理单位肖像UI的创建、更新和排列
 
     std::unordered_map<int, game::data::WaypointNode> waypoint_nodes_;  // 路径节点ID到节点数据的映射
     std::vector<int> start_points_;                                     // 起点ID列表
+    game::data::GameStats game_stats_;                                  // 关卡内游戏统计数据
 
     std::unique_ptr<game::factory::EntityFactory> entity_factory_;      // 实体工厂，负责创建和管理实体
 

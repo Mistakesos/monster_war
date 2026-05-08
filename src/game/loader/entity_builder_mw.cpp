@@ -1,5 +1,7 @@
 #include "game/loader/entity_builder_mw.hpp"
 #include "engine/core/context.hpp"
+#include "engine/component/tilelayer_component.hpp"
+#include "game/defs/tags.hpp"
 #include <SFML/System/Vector2.hpp>
 #include <nlohmann/json.hpp>
 #include <spdlog/spdlog.h>
@@ -21,6 +23,7 @@ EntityBuilderMW* EntityBuilderMW::build() {
         build_path();
     } else {
         BasicEntityBuilder::build();
+        build_place();                  // 如果识别到地点类型就添加
     }
     
     return this;
@@ -52,6 +55,24 @@ void EntityBuilderMW::build_path() {
     // 添加到节点容器中
     waypoint_nodes_[id] = game::data::WaypointNode{id, std::move(position), std::move(next_node_ids)};
     spdlog::trace("waypoint_nodes_ size: {}", waypoint_nodes_.size());
+}
+
+void EntityBuilderMW::build_place() {
+    if (tile_info_ && tile_info_->properties_) {
+        auto& properties = tile_info_->properties_.value();
+        for (auto& property : properties) {
+            if (property.value("name", "") == "place") {
+                auto type = property.value("value", "");
+                if (type == "melee") {
+                    registry_.emplace<game::defs::MeleePlaceTag>(entity_id_);
+                }
+                else if (type == "range") {
+                    registry_.emplace<game::defs::RangedPlaceTag>(entity_id_);
+                }
+                // TODO: 未来如果有其他类型可以继续添加
+            }
+        }
+    }
 }
 
 }   // namespace game::loader

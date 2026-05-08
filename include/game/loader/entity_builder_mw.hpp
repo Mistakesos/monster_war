@@ -33,6 +33,7 @@ public:
 
 private:
     void build_path();       ///< @brief 生成路径节点
+    void build_place();      ///< @brief 生成单位放置区域标签
 
     // 保存路径节点和起点数据（非拥有）
     std::unordered_map<int, game::data::WaypointNode>& waypoint_nodes_;

@@ -23,6 +23,7 @@
 #include "game/system/projectile_system.hpp"
 #include "game/system/effect_system.hpp"
 #include "game/system/health_bar_system.hpp"
+#include "game/system/game_rule_system.hpp"
 
 #include "engine/loader/level_loader.hpp"
 #include "game/loader/entity_builder_mw.hpp"
@@ -30,15 +31,12 @@
 #include "game/factory/entity_factory.hpp"
 #include "game/defs/tags.hpp"
 #include "engine/core/context.hpp"
-#include "engine/core/game_state.hpp"
 #include "engine/utils/events.hpp"
 #include "engine/utils/math.hpp"
 
 #include "engine/ui/ui_manager.hpp"
-#include "engine/ui/ui_panel.hpp"
 #include "engine/ui/ui_image.hpp"
-#include "engine/ui/ui_button.hpp"
-#include "engine/ui/ui_label.hpp"
+#include "game/ui/units_portrait_ui.hpp"
 
 #include <entt/signal/sigh.hpp>
 #include <entt/signal/dispatcher.hpp>
@@ -50,43 +48,18 @@ using namespace entt::literals;
 namespace game::scene {
 GameScene::GameScene(engine::core::Context& context)
     : Scene{"GameScene", context} {
-    if (!init_session_data()) {
-        spdlog::error("初始化session_data_失败");
-        return;
-    }
-
-    if (!init_ui_config()) {
-        spdlog::error("初始化UI配置失败");
-        return;
-    }
-
-    if (!load_level()) {
-        spdlog::error("加载关卡失败！");
-    }
-    
-    if (!init_event_connections()) {
-        spdlog::error("初始化事件连接失败");
-        return;
-    }
-
-    if (!init_input_connections()) {
-        spdlog::error("初始化输入连接失败");
-        return;
-    }
-
-    if (!init_entity_factory()) {
-        spdlog::error("初始化实体工厂失败");
-        return;
-    }
-
-    if (!init_systems()) {
-        spdlog::error("初始化系统失败");
-        return;
-    }
+    if (!init_session_data())           { spdlog::error("初始化session_data_失败"); return; }
+    if (!init_ui_config())              { spdlog::error("初始化UI配置失败"); return; }
+    if (!load_level())                  { spdlog::error("加载关卡失败！"); }
+    if (!init_event_connections())      { spdlog::error("初始化事件连接失败"); return; }
+    if (!init_input_connections())      { spdlog::error("初始化输入连接失败"); return; }
+    if (!init_entity_factory())         { spdlog::error("初始化实体工厂失败"); return; }
+    if (!init_registry_context())       { spdlog::error("初始化注册表上下文失败"); return; }
+    if (!init_units_portrait_ui())      { spdlog::error("初始化单位肖像UI失败"); return; }
+    if (!init_systems())                { spdlog::error("初始化系统失败"); return; }
 
     test_session_data();
     create_test_enemy();
-    create_units_portrait_ui();
 
     spdlog::info("GameScene 构造完成");
 }
@@ -145,8 +118,7 @@ bool GameScene::load_level() {
 }
 
 bool GameScene::init_event_connections() {
-    auto& dispatcher = context_.get_dispatcher();
-    dispatcher.sink<game::defs::EnemyArriveHomeEvent>().connect<&GameScene::on_enemy_arrive_home>(this);
+    // auto& dispatcher = context_.get_dispatcher();
     return true;
 }
 
@@ -175,6 +147,26 @@ bool GameScene::init_entity_factory() {
     return true;
 }
 
+bool GameScene::init_registry_context() {
+    // 让注册表存储一些数据类型实例作为上下文，方便使用
+    registry_.ctx().emplace<std::shared_ptr<game::factory::BlueprintManager>>(blueprint_manager_);
+    registry_.ctx().emplace<std::shared_ptr<game::data::SessionData>>(session_data_);
+    registry_.ctx().emplace<std::shared_ptr<game::data::UIConfig>>(ui_config_);
+    registry_.ctx().emplace<game::data::GameStats&>(game_stats_);
+    spdlog::info("registry_ 上下文初始化完成");
+    return true;
+}
+
+bool GameScene::init_units_portrait_ui() {
+    try {
+        units_portrait_ui_ = std::make_unique<game::ui::UnitsPortraitUI>(registry_, *ui_manager_, context_);
+    } catch (const std::exception& e) {
+        spdlog::error("初始化单位肖像UI失败: {}", e.what());
+        return false;
+    }
+    return true;
+}
+
 bool GameScene::init_systems() {
     auto& dispatcher = context_.get_dispatcher();
     // 系统初始化需要在可能的依赖模块(如实体工厂)初始化之后
@@ -197,95 +189,9 @@ bool GameScene::init_systems() {
     projectile_system_ = std::make_unique<game::system::ProjectileSystem>(registry_, dispatcher, *entity_factory_);
     effect_system_ = std::make_unique<game::system::EffectSystem>(registry_, dispatcher, *entity_factory_);
     health_bar_system_ = std::make_unique<game::system::HealthBarSystem>();
+    game_rule_system_ = std::make_unique<game::system::GameRuleSystem>(registry_, dispatcher);
     spdlog::info("systems 初始化完成");
     return true;
-}
-
-void GameScene::create_units_portrait_ui() {
-    if (!ui_manager_) return;
-
-    auto padding = ui_config_->get_unit_panel_padding();
-    auto& unit_map = session_data_->get_unit_map();
-    auto unit_num = unit_map.size();
-
-    // --- 在屏幕下方创建一个panel UI 条，用于显示角色肖像 ---
-    // 获取窗口大小和角色肖像框大小
-    auto window_size = context_.get_game_state().get_logical_size();
-    auto frame_size = ui_config_->get_unit_panel_frame_size();
-    // 根据角色数量、角色肖像框大小、间隔计算panel的位置和大小
-    auto pos = sf::Vector2f(0.f, window_size.y - frame_size.y - 2 * padding);
-    auto size = sf::Vector2f(unit_num*frame_size.x + (unit_num + 1)*padding, frame_size.y + 2 * padding);
-    auto anchor_panel = std::make_unique<engine::ui::UIPanel>(pos, size);
-    // 设置背景色
-    anchor_panel->set_background_color(sf::Color(26, 26, 26, 26));
-    // 设置ID，以后即可根据ID找到该panel
-    anchor_panel->set_id("unit_panel"_hs);
-
-    // 依次添加角色肖像，每个肖像显示由四部分依次叠加：portrait，frame，icon，cost，可以通过一个frame_panel定位（位于上层anchor_panel之中）
-    int index = 0;
-    for (auto& [name_id, unit_data] : unit_map) {
-        auto portrait = ui_config_->get_portrait(name_id);
-        auto frame = ui_config_->get_portrait_frame(unit_data.rarity_);
-        auto icon = ui_config_->get_icon(unit_data.class_id_);
-        auto cost = blueprint_manager_->get_player_class_blueprint(unit_data.class_id_).player_.cost_;
-        cost = static_cast<int>(std::round(engine::utils::stat_modify(cost, 1, unit_data.rarity_))); // 只有稀有度对cost有影响
-
-        // 创建每个肖像的 frame_panel
-        auto frame_pos = sf::Vector2f(padding + index * (frame_size.x + padding), padding);
-        auto frame_panel = std::make_unique<engine::ui::UIPanel>(frame_pos, frame_size);
-        frame_panel->set_id(name_id);
-
-        // 依次添加四个元素，为了能够交互，将frame设置为按钮，并绑定点击事件
-        frame_panel->add_child(std::make_unique<engine::ui::UIImage>(portrait, sf::Vector2f(0.f, 0.f), frame_size));
-        frame_panel->add_child(std::make_unique<engine::ui::UIButton>(context_, 
-            frame, 
-            frame, 
-            frame, 
-            sf::Vector2f(0.f, 0.f), 
-            frame_size
-            // TODO: 添加点击事件回调函数
-        ));
-        frame_panel->add_child(std::make_unique<engine::ui::UIImage>(icon, sf::Vector2f(0.f, 0.f), frame_size / 2.f));
-        frame_panel->add_child(std::make_unique<engine::ui::UILabel>(context_, 
-            std::to_string(cost), 
-            ui_config_->get_unit_panel_font_path(), 
-            ui_config_->get_unit_panel_font_size(), 
-            sf::Color::Yellow, 
-            ui_config_->get_unit_panel_font_offset()
-        ));
-        // 最后添加一个灰色的遮盖panel，cost不足以支持该角色出击时显示
-        auto cover_panel = std::make_unique<engine::ui::UIPanel>(sf::Vector2f(0.f, 0.f), frame_size);
-        cover_panel->set_background_color(sf::Color(0, 0, 0, 51));
-        cover_panel->set_id("cover_panel"_hs);
-        frame_panel->add_child(std::move(cover_panel));
-
-        // 将frame_panel添加到anchor_panel中，并使用cost作为排序键
-        anchor_panel->add_child(std::move(frame_panel), cost);
-        index++;
-    }
-    
-    // 对anchor_panel中的子元素(frame_panel)进行排序
-    anchor_panel->sort_children_by_order_index();
-    // 按顺序排列anchor_panel中的子元素(frame_panel)的位置
-    arrange_units_portrait_ui(anchor_panel.get(), frame_size, padding);
-
-    ui_manager_->add_element(std::move(anchor_panel));
-}
-
-void GameScene::arrange_units_portrait_ui(engine::ui::UIElement* anchor_panel, const sf::Vector2f& frame_size, float padding) {
-    // 遍历panel中的子元素(定位panel)，并依次设定位置
-    for (size_t i = 0; i < anchor_panel->get_children().size(); i++) {
-        auto& child = anchor_panel->get_children()[i];
-        child->set_position(sf::Vector2f(padding + i * (frame_size.x + padding), padding));
-    }
-    // 更新panel的size
-    anchor_panel->set_size(sf::Vector2f(padding + anchor_panel->get_children().size() * (frame_size.x + padding), 
-                                    frame_size.y + 2 * padding));
-}
-
-void GameScene::on_enemy_arrive_home(const game::defs::EnemyArriveHomeEvent&) {
-    spdlog::info("敌人到达基地");
-    // TODO: 添加敌人到达基地的逻辑
 }
 
 void GameScene::test_session_data() {
@@ -365,6 +271,7 @@ void GameScene::update(sf::Time delta) {
     
     // 注意系统更新的顺序
     timer_system_->update(registry_, delta);
+    game_rule_system_->update(delta);
     block_system_->update(registry_, dispatcher);
     set_target_system_->update(registry_);
     follow_path_system_->update(registry_, dispatcher, waypoint_nodes_, delta);
@@ -374,6 +281,9 @@ void GameScene::update(sf::Time delta) {
     movement_system_->update(registry_, delta);
     animation_system_->update(delta);
     ysort_system_->update(registry_);   // 调用顺序要在MovementSystem之后
+
+    // 场景中其他更新函数
+    units_portrait_ui_->update(delta);
     Scene::update(delta);
 }
 
