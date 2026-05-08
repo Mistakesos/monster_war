@@ -245,7 +245,7 @@ void GameScene::create_units_portrait_ui() {
             frame_size
             // TODO: 添加点击事件回调函数
         ));
-        frame_panel->add_child(std::make_unique<engine::ui::UIImage>(icon, sf::Vector2f(0.f, 0.f), frame_size / 2.0f));
+        frame_panel->add_child(std::make_unique<engine::ui::UIImage>(icon, sf::Vector2f(0.f, 0.f), frame_size / 2.f));
         frame_panel->add_child(std::make_unique<engine::ui::UILabel>(context_, 
             std::to_string(cost), 
             ui_config_->get_unit_panel_font_path(), 
@@ -313,7 +313,7 @@ bool GameScene::on_create_test_player_melee() {
     // 获取鼠标在窗口中的像素位置
     auto mouse_pos = context_.get_input_manager().get_mouse_position_window();
     // 通过 camera 将屏幕坐标转换为世界坐标（自动处理 viewport/letterbox 偏移）
-    auto world_pos = context_.get_camera().screen_to_world(static_cast<sf::Vector2f>(mouse_pos));
+    auto world_pos = context_.get_camera().screen_to_world(mouse_pos);
 
     auto entity = entity_factory_->create_player_unit("warrior"_hs, world_pos);
     // 让玩家处于受伤状态（治疗师不会锁定满血目标）
@@ -328,13 +328,13 @@ bool GameScene::on_create_test_player_ranged() {
     // 获取鼠标在窗口中的像素位置
     auto mouse_pos = context_.get_input_manager().get_mouse_position_window();
     // 通过 camera 将屏幕坐标转换为世界坐标（自动处理 viewport/letterbox 偏移）
-    auto world_pos = context_.get_camera().screen_to_world(static_cast<sf::Vector2f>(mouse_pos));
+    auto world_pos = context_.get_camera().screen_to_world(mouse_pos);
 
     auto entity = entity_factory_->create_player_unit("archer"_hs, world_pos);
     // 让玩家处于受伤状态（治疗师不会锁定满血目标）
     registry_.emplace<game::defs::InjuredTag>(entity);
     auto& stats = registry_.get<game::component::StatsComponent>(entity);
-    stats.hp_ = stats.max_hp_ / 2;
+    stats.hp_ = stats.max_hp_ / 2.f;
     spdlog::info("创建弓箭手: 位置: {}, {}", world_pos.x, world_pos.y);
     return true;
 }
@@ -343,7 +343,7 @@ bool GameScene::on_create_test_player_healer() {
     // 获取鼠标在窗口中的像素位置
     auto mouse_pos = context_.get_input_manager().get_mouse_position_window();
     // 通过 camera 将屏幕坐标转换为世界坐标（自动处理 viewport/letterbox 偏移）
-    auto world_pos = context_.get_camera().screen_to_world(static_cast<sf::Vector2f>(mouse_pos));
+    auto world_pos = context_.get_camera().screen_to_world(mouse_pos);
 
     entity_factory_->create_player_unit("witch"_hs, world_pos);
     return true;

@@ -30,9 +30,9 @@ public:
     
     void move(const sf::Vector2f& offset);                                  ///< @brief 移动相机
 
-    sf::Vector2f world_to_screen(const sf::Vector2f& world_pos) const;      ///< @brief 世界坐标转屏幕坐标
-    sf::Vector2f world_to_screen_with_parallax(const sf::Vector2f& world_pos, const sf::Vector2f& scroll_factor) const; ///< 世界坐标转屏幕坐标，考虑视差滚动
-    sf::Vector2f screen_to_world(const sf::Vector2f& screen_pos) const;     ///< @brief 屏幕坐标转世界坐标
+    sf::Vector2i world_to_screen(const sf::Vector2f& world_pos) const;      ///< @brief 世界坐标转屏幕坐标
+    sf::Vector2i world_to_screen_with_parallax(const sf::Vector2f& world_pos, const sf::Vector2f& scroll_factor) const; ///< 世界坐标转屏幕坐标，考虑视差滚动
+    sf::Vector2f screen_to_world(const sf::Vector2i& screen_pos) const;     ///< @brief 屏幕坐标转世界坐标
 
     void set_world_view_center(sf::Vector2f center);                        ///< @brief 设置世界摄像机中心
     void set_ui_view_center(sf::Vector2f center);                           ///< @brief 设置ui摄像机中心

@@ -104,11 +104,14 @@ void Camera::apply_letterbox(sf::Vector2u window_size) {
     fix_view(ui_view_);
 }
 
-sf::Vector2f Camera::world_to_screen(const sf::Vector2f& world_pos) const {
-    return static_cast<sf::Vector2f>(window_obs_->mapCoordsToPixel(world_pos));
+sf::Vector2i Camera::world_to_screen(const sf::Vector2f& world_pos) const {
+    // 先设置 world_view，确保 mapPixelToCoords 使用正确的 view 进行转换
+    // （因为渲染后窗口的 view 可能被设置为 ui_view）
+    window_obs_->setView(world_view_);
+    return window_obs_->mapCoordsToPixel(world_pos);
 }
 
-sf::Vector2f Camera::world_to_screen_with_parallax(const sf::Vector2f& world_pos, const sf::Vector2f& scroll_factor) const {
+sf::Vector2i Camera::world_to_screen_with_parallax(const sf::Vector2f& world_pos, const sf::Vector2f& scroll_factor) const {
     // 1. 计算视差偏移：相机位置乘以滚动因子
     auto position = get_world_view_center();
     sf::Vector2f parallax_offset(position.x * scroll_factor.x, position.y * scroll_factor.y);
@@ -117,13 +120,13 @@ sf::Vector2f Camera::world_to_screen_with_parallax(const sf::Vector2f& world_pos
     sf::Vector2f parallax_adjusted_pos = world_pos - parallax_offset;
     
     // 3. 转换为屏幕坐标（与第一个函数保持一致）
-    return window_obs_->mapPixelToCoords(static_cast<sf::Vector2i>(parallax_adjusted_pos));
+    return window_obs_->mapCoordsToPixel(parallax_adjusted_pos);
 }
 
-sf::Vector2f Camera::screen_to_world(const sf::Vector2f& screen_pos) const {
+sf::Vector2f Camera::screen_to_world(const sf::Vector2i& screen_pos) const {
     // 先设置 world_view，确保 mapPixelToCoords 使用正确的 view 进行转换
     // （因为渲染后窗口的 view 可能被设置为 ui_view）
     window_obs_->setView(world_view_);
-    return window_obs_->mapPixelToCoords(static_cast<sf::Vector2i>(screen_pos));
+    return window_obs_->mapPixelToCoords(screen_pos);
 }
 } // namespace engine::render
