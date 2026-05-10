@@ -29,10 +29,14 @@ UnitsPortraitUI::UnitsPortraitUI(entt::registry& registry,
     , context_{context} {
     // 构造函数中直接初始化（创建单位肖像UI），可省去init函数
     create_units_portrait_ui();
+    // 注册事件
+    context_.get_dispatcher().sink<game::defs::RemoveUIPortraitEvent>().connect<&UnitsPortraitUI::on_remove_ui_portrait_event>(this);
     spdlog::trace("UnitsPortraitUI 构造完成。");
 }
 
-UnitsPortraitUI::~UnitsPortraitUI() = default;
+UnitsPortraitUI::~UnitsPortraitUI() {
+    context_.get_dispatcher().sink<game::defs::RemoveUIPortraitEvent>().disconnect<&UnitsPortraitUI::on_remove_ui_portrait_event>(this);
+}
 
 void UnitsPortraitUI::update(sf::Time) {
     update_portrait_cover();
@@ -98,8 +102,11 @@ void UnitsPortraitUI::create_units_portrait_ui() {
             frame, 
             frame, 
             sf::Vector2f(0.f, 0.f), 
-            frame_size
-            // TODO: 添加点击事件回调函数
+            frame_size,
+            [this, name_id, &unit_data, cost]() {   // 按钮点击回调：发送单位准备事件
+                context_.get_dispatcher().enqueue(game::defs::PrepUnitEvent{name_id, unit_data.class_id_, cost}); 
+            }
+            // TODO: 悬浮进入和悬浮离开回调函数
         ));
         frame_panel->add_child(std::make_unique<engine::ui::UIImage>(icon, sf::Vector2f(0.f, 0.f), frame_size / 2.f));
         frame_panel->add_child(std::make_unique<engine::ui::UILabel>(context_, 
@@ -111,7 +118,7 @@ void UnitsPortraitUI::create_units_portrait_ui() {
         ));
         // 最后添加一个灰色的遮盖panel，cost不足以支持该角色出击时显示
         auto cover_panel = std::make_unique<engine::ui::UIPanel>(sf::Vector2f(0.f, 0.f), frame_size);
-        cover_panel->set_background_color(sf::Color(0, 0, 0, 51));
+        cover_panel->set_background_color(sf::Color(0, 0, 0, 100));
         cover_panel->set_id("cover_panel"_hs);
         frame_panel->add_child(std::move(cover_panel));
 
@@ -143,6 +150,11 @@ void UnitsPortraitUI::arrange_units_portrait_ui() {
     // 更新panel的size
     anchor_panel_->set_size(sf::Vector2f(padding + anchor_panel_->get_children().size() * (frame_size.x + padding), 
                                     frame_size.y + 2 * padding));
+}
+
+void UnitsPortraitUI::on_remove_ui_portrait_event(const game::defs::RemoveUIPortraitEvent& event) {
+    anchor_panel_->remove_child_by_id(event.name_id_);
+    arrange_units_portrait_ui();
 }
 
 } // namespace game::ui

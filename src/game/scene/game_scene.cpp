@@ -3,7 +3,6 @@
 #include "engine/render/camera.hpp"
 
 #include "game/component/player_component.hpp"
-#include "game/component/stats_component.hpp"
 
 #include "engine/system/render_system.hpp"
 #include "engine/system/movement_system.hpp"
@@ -24,18 +23,18 @@
 #include "game/system/effect_system.hpp"
 #include "game/system/health_bar_system.hpp"
 #include "game/system/game_rule_system.hpp"
+#include "game/system/place_unit_system.hpp"
+#include "game/system/render_range_system.hpp"
 
 #include "engine/loader/level_loader.hpp"
 #include "game/loader/entity_builder_mw.hpp"
 #include "game/factory/blueprint_manager.hpp"
 #include "game/factory/entity_factory.hpp"
-#include "game/defs/tags.hpp"
 #include "engine/core/context.hpp"
 #include "engine/utils/events.hpp"
 #include "engine/utils/math.hpp"
 
 #include "engine/ui/ui_manager.hpp"
-#include "engine/ui/ui_image.hpp"
 #include "game/ui/units_portrait_ui.hpp"
 
 #include <entt/signal/sigh.hpp>
@@ -55,10 +54,9 @@ GameScene::GameScene(engine::core::Context& context)
     if (!init_input_connections())      { spdlog::error("初始化输入连接失败"); return; }
     if (!init_entity_factory())         { spdlog::error("初始化实体工厂失败"); return; }
     if (!init_registry_context())       { spdlog::error("初始化注册表上下文失败"); return; }
-    if (!init_units_portrait_ui())      { spdlog::error("初始化单位肖像UI失败"); return; }
     if (!init_systems())                { spdlog::error("初始化系统失败"); return; }
+    if (!init_units_portrait_ui())      { spdlog::error("初始化单位肖像UI失败"); return; }
 
-    test_session_data();
     create_test_enemy();
 
     spdlog::info("GameScene 构造完成");
@@ -70,8 +68,6 @@ GameScene::~GameScene() {
     // 断开所有事件连接
     dispatcher.disconnect(this);
     // 断开输入信号连接
-    input_manager.on_action(Action::MouseRight).disconnect<&GameScene::on_create_test_player_melee>(this);
-    input_manager.on_action(Action::MouseLeft).disconnect<&GameScene::on_create_test_player_ranged>(this);
     input_manager.on_action(Action::Pause).disconnect<&GameScene::on_clear_all_players>(this);
 }
 
@@ -124,10 +120,7 @@ bool GameScene::init_event_connections() {
 
 bool GameScene::init_input_connections() {
     auto& input_manager = context_.get_input_manager();
-    input_manager.on_action(Action::MouseRight).connect<&GameScene::on_create_test_player_melee>(this);
-    input_manager.on_action(Action::MouseLeft).connect<&GameScene::on_create_test_player_ranged>(this);
     input_manager.on_action(Action::Pause).connect<&GameScene::on_clear_all_players>(this);
-    input_manager.on_action(Action::MoveLeft).connect<&GameScene::on_create_test_player_healer>(this);
     return true;
 }
 
@@ -190,17 +183,10 @@ bool GameScene::init_systems() {
     effect_system_ = std::make_unique<game::system::EffectSystem>(registry_, dispatcher, *entity_factory_);
     health_bar_system_ = std::make_unique<game::system::HealthBarSystem>();
     game_rule_system_ = std::make_unique<game::system::GameRuleSystem>(registry_, dispatcher);
+    place_unit_system_ = std::make_unique<game::system::PlaceUnitSystem>(registry_, *entity_factory_, context_);
+    render_range_system_ = std::make_unique<game::system::RenderRangeSystem>();
     spdlog::info("systems 初始化完成");
     return true;
-}
-
-void GameScene::test_session_data() {
-    spdlog::info("关卡号: {}", level_number_);
-    spdlog::info("积分: {}", session_data_->get_point());
-    spdlog::info("是否通关: {}", session_data_->is_level_clear());
-    for (auto& unit : session_data_->get_unit_map()) {
-        spdlog::info("角色名: {}, 职业: {}, 等级: {}, 稀有度: {}", unit.second.name_, unit.second.class_, unit.second.level_, unit.second.rarity_);
-    }
 }
 
 void GameScene::create_test_enemy() {
@@ -215,50 +201,10 @@ void GameScene::create_test_enemy() {
     }
 }
 
-bool GameScene::on_create_test_player_melee() {
-    // 获取鼠标在窗口中的像素位置
-    auto mouse_pos = context_.get_input_manager().get_mouse_position_window();
-    // 通过 camera 将屏幕坐标转换为世界坐标（自动处理 viewport/letterbox 偏移）
-    auto world_pos = context_.get_camera().screen_to_world(mouse_pos);
-
-    auto entity = entity_factory_->create_player_unit("warrior"_hs, world_pos);
-    // 让玩家处于受伤状态（治疗师不会锁定满血目标）
-    registry_.emplace<game::defs::InjuredTag>(entity);
-    auto& stats = registry_.get<game::component::StatsComponent>(entity);
-    stats.hp_ = stats.max_hp_ / 2.f;
-    spdlog::info("创建战士: 位置: {}, {}", world_pos.x, world_pos.y);
-    return true;
-}
-
-bool GameScene::on_create_test_player_ranged() {
-    // 获取鼠标在窗口中的像素位置
-    auto mouse_pos = context_.get_input_manager().get_mouse_position_window();
-    // 通过 camera 将屏幕坐标转换为世界坐标（自动处理 viewport/letterbox 偏移）
-    auto world_pos = context_.get_camera().screen_to_world(mouse_pos);
-
-    auto entity = entity_factory_->create_player_unit("archer"_hs, world_pos);
-    // 让玩家处于受伤状态（治疗师不会锁定满血目标）
-    registry_.emplace<game::defs::InjuredTag>(entity);
-    auto& stats = registry_.get<game::component::StatsComponent>(entity);
-    stats.hp_ = stats.max_hp_ / 2.f;
-    spdlog::info("创建弓箭手: 位置: {}, {}", world_pos.x, world_pos.y);
-    return true;
-}
-
-bool GameScene::on_create_test_player_healer() {
-    // 获取鼠标在窗口中的像素位置
-    auto mouse_pos = context_.get_input_manager().get_mouse_position_window();
-    // 通过 camera 将屏幕坐标转换为世界坐标（自动处理 viewport/letterbox 偏移）
-    auto world_pos = context_.get_camera().screen_to_world(mouse_pos);
-
-    entity_factory_->create_player_unit("witch"_hs, world_pos);
-    return true;
-}
-
 bool GameScene::on_clear_all_players() {
     auto view = registry_.view<game::component::PlayerComponent>();
     for (auto entity : view) {
-        registry_.destroy(entity);
+        context_.get_dispatcher().enqueue(game::defs::RemovePlayerUnitEvent{entity});
     }
     return true;
 }
@@ -280,6 +226,7 @@ void GameScene::update(sf::Time delta) {
     projectile_system_->update(delta);
     movement_system_->update(registry_, delta);
     animation_system_->update(delta);
+    place_unit_system_->update(delta);
     ysort_system_->update(registry_);   // 调用顺序要在MovementSystem之后
 
     // 场景中其他更新函数
@@ -294,6 +241,7 @@ void GameScene::render() {
     // 注意渲染顺序，保证正确的遮盖关系
     render_system_->update(registry_, context_.get_renderer(), context_.get_camera());
     health_bar_system_->update(registry_, renderer, camera);
+    render_range_system_->update(registry_, renderer, camera);
 
     Scene::render();
 }

@@ -114,6 +114,18 @@ public:
     void draw_ui_filled_rect(const Camera& camera, const sf::FloatRect& rect, sf::Color color);
 
     /**
+     * @brief 绘制实心圆形（世界坐标）
+     * @param color 填充颜色
+     */
+    void draw_filled_circle(const Camera& camera, const float radius, const sf::Vector2f& position, sf::Color color);
+
+    /**
+     * @brief 绘制实心圆形（UI坐标）
+     * @param color 填充颜色
+     */
+    void draw_ui_filled_circle(const Camera& camera, const float radius, const sf::Vector2f& position, sf::Color color);
+
+    /**
      * @brief 设置窗口背景色
      * @param color 具体颜色
      */

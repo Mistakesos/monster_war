@@ -50,6 +50,16 @@ public:
      * @return 投射物实体
      */
     entt::entity create_projectile(entt::id_type id, const sf::Vector2f& start_position, const sf::Vector2f& target_position, entt::entity target, float damage);
+    
+    /**
+     * @brief 创建单位准备类型实体
+     * @param name_id 单位名称ID
+     * @param class_id 单位ID
+     * @param cost 费用
+     * @param position 位置
+     * @return 单位准备类型实体
+     */
+    entt::entity create_unit_prep(entt::id_type name_id, entt::id_type class_id, int cost, const sf::Vector2f& position);
 
     /**
      * @brief 创建敌人死亡特效

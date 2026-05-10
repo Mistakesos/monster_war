@@ -16,6 +16,7 @@
 #include "game/component/class_name_component.hpp"
 #include "game/component/blocker_component.hpp"
 #include "game/component/projectile_component.hpp"
+#include "game/component/unit_prep_component.hpp"
 #include <SFML/Graphics/Rect.hpp>
 #include <entt/entity/registry.hpp>
 #include <entt/core/hashed_string.hpp>
@@ -126,8 +127,25 @@ entt::entity EntityFactory::create_projectile(entt::id_type id, const sf::Vector
     registry_.emplace<engine::component::RenderComponent>(entity, engine::component::RenderComponent::MAIN_LAYER + 1);
     return entity;
 }
-void EntityFactory::add_transform_component(entt::entity entity, const sf::Vector2f& position, const sf::Vector2f& scale, sf::Angle rotation) {
-    registry_.emplace<engine::component::TransformComponent>(entity, position, scale, rotation);
+
+entt::entity EntityFactory::create_unit_prep(entt::id_type name_id, entt::id_type class_id, int cost, const sf::Vector2f& position) {
+    auto entity = registry_.create();
+    const auto& blueprint = blueprint_manager_.get_player_class_blueprint(class_id);
+    add_transform_component(entity, position);
+    add_sprite_component(entity, blueprint.sprite_);
+    // 直接添加UnitPrepComponent组件
+    registry_.emplace<game::component::UnitPrepComponent>(entity,
+        name_id, 
+        blueprint.player_.type_,
+        blueprint.stats_.range_,
+        cost);
+
+    // 补充渲染组件与显示攻击范围标志
+    registry_.emplace<engine::component::RenderComponent>(entity, 100.f);     // 显示优先度很高
+    if (blueprint.player_.type_ == game::defs::PlayerType::Ranged) {
+        registry_.emplace<game::defs::ShowRangeTag>(entity);
+    }
+    return entity;
 }
 
 entt::entity EntityFactory::create_enemy_dead_effect(entt::id_type class_id, const sf::Vector2f& position, const bool is_flipped) {
@@ -146,6 +164,10 @@ entt::entity EntityFactory::create_enemy_dead_effect(entt::id_type class_id, con
     registry_.emplace<engine::component::RenderComponent>(entity);
     registry_.emplace<game::defs::OneShotRemoveTag>(entity);
     return entity;
+}
+
+void EntityFactory::add_transform_component(entt::entity entity, const sf::Vector2f& position, const sf::Vector2f& scale, sf::Angle rotation) {
+    registry_.emplace<engine::component::TransformComponent>(entity, position, scale, rotation);
 }
 
 void EntityFactory::add_sprite_component(entt::entity entity, const data::SpriteBlueprint& sprite, const bool is_flipped) {

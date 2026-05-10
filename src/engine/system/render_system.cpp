@@ -16,7 +16,7 @@ void RenderSystem::update(entt::registry& registry, render::Renderer& render, co
 
     auto view = registry.view<component::RenderComponent, component::TransformComponent, component::SpriteComponent>();
     view.use<component::RenderComponent>();     // 重要！这里要使用 RenderComponent 的顺序
-    for (auto&& [entity, _, transform, sprite] : view.each()) {
+    for (auto&& [entity, render_c, transform, sprite] : view.each()) {
         auto& s = sprite.sprite_;
         if (transform.rotation_ != sf::Angle::Zero) {
             // 对于旋转的实体（如子弹），使用纹理中心作为旋转原点
@@ -31,6 +31,7 @@ void RenderSystem::update(entt::registry& registry, render::Renderer& render, co
             s.setPosition(transform.position_);
         }
         s.setScale(transform.scale_);
+        s.setColor(render_c.color_);
         render.draw_sprite(camera, s);
     }
 }

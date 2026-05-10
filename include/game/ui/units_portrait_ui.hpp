@@ -1,4 +1,5 @@
 #pragma once
+#include "game/defs/events.hpp"
 #include <SFML/System/Time.hpp>
 #include <entt/entity/fwd.hpp>
 
@@ -39,6 +40,9 @@ private:
     void update_portrait_cover();           ///< @brief 更新肖像遮盖
     void create_units_portrait_ui();        ///< @brief 创建单位肖像UI
     void arrange_units_portrait_ui();       ///< @brief 排列单位肖像UI（肖像增/减时调用）
+
+    // 事件回调函数
+    void on_remove_ui_portrait_event(const game::defs::RemoveUIPortraitEvent& event);
 
     // --- 构造函数传入的外部组件引用 ---
     entt::registry& registry_;

@@ -184,4 +184,22 @@ void Renderer::draw_ui_filled_rect(const Camera& camera, const sf::FloatRect& re
     window_obs_->draw(shape);
 }
 
+void Renderer::draw_filled_circle(const Camera& camera, const float radius, const sf::Vector2f& position, sf::Color color) {
+    window_obs_->setView(camera.get_world_view());
+    sf::CircleShape shape{radius};
+    shape.setOrigin({radius, radius});
+    shape.setPosition(position);
+    shape.setFillColor(color);
+    window_obs_->draw(shape);
+}
+
+void Renderer::draw_ui_filled_circle(const Camera& camera, const float radius, const sf::Vector2f& position, sf::Color color) {
+    window_obs_->setView(camera.get_ui_view());
+    sf::CircleShape shape{radius};
+    shape.setOrigin({radius, radius});
+    shape.setPosition(position);
+    shape.setFillColor(color);
+    window_obs_->draw(shape);
+}
+
 } // namespace engine::render
