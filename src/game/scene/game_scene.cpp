@@ -28,6 +28,7 @@
 
 #include "engine/loader/level_loader.hpp"
 #include "game/loader/entity_builder_mw.hpp"
+#include "game/spawner/enemy_spawner.hpp"
 #include "game/factory/blueprint_manager.hpp"
 #include "game/factory/entity_factory.hpp"
 #include "engine/core/context.hpp"
@@ -48,6 +49,7 @@ namespace game::scene {
 GameScene::GameScene(engine::core::Context& context)
     : Scene{"GameScene", context} {
     if (!init_session_data())           { spdlog::error("初始化session_data_失败"); return; }
+    if (!init_level_config())           { spdlog::error("初始化关卡配置失败"); return; }
     if (!init_ui_config())              { spdlog::error("初始化UI配置失败"); return; }
     if (!load_level())                  { spdlog::error("加载关卡失败！"); }
     if (!init_event_connections())      { spdlog::error("初始化事件连接失败"); return; }
@@ -55,9 +57,8 @@ GameScene::GameScene(engine::core::Context& context)
     if (!init_entity_factory())         { spdlog::error("初始化实体工厂失败"); return; }
     if (!init_registry_context())       { spdlog::error("初始化注册表上下文失败"); return; }
     if (!init_systems())                { spdlog::error("初始化系统失败"); return; }
+    if (!init_enemy_spawner())          { spdlog::error("初始化敌人生成器失败"); return; }
     if (!init_units_portrait_ui())      { spdlog::error("初始化单位肖像UI失败"); return; }
-
-    create_test_enemy();
 
     spdlog::info("GameScene 构造完成");
 }
@@ -83,6 +84,19 @@ bool GameScene::init_session_data() {
     return true;
 }
 
+bool GameScene::init_level_config() {
+    if (!level_config_) {
+        level_config_ = std::make_shared<game::data::LevelConfig>();
+        if (!level_config_->load_from_file("assets/data/level_config.json")) {
+            spdlog::error("加载关卡配置失败");
+            return false;
+        }
+    }
+    waves_ = level_config_->get_waves_data(level_number_);
+    game_stats_.enemy_count_ = level_config_->get_total_enemy_count(level_number_);
+    return true;
+}
+
 bool GameScene::init_ui_config() {
     if (!ui_config_) {
         ui_config_ = std::make_shared<game::data::UIConfig>(&context_.get_resource_manager());
@@ -105,8 +119,9 @@ bool GameScene::load_level() {
         start_points_)
     );
 
-    // 不调用setEntityBuilder，则使用默认的BasicEntityBuilder
-    if (!level_loader.load_level("assets/maps/level1.tmj", this)) {
+    // 获取关卡地图路径
+    auto map_path = level_config_->get_map_path(level_number_);
+    if (!level_loader.load_level(map_path, this)) {
         spdlog::error("加载关卡失败");
         return false;
     }
@@ -145,7 +160,13 @@ bool GameScene::init_registry_context() {
     registry_.ctx().emplace<std::shared_ptr<game::factory::BlueprintManager>>(blueprint_manager_);
     registry_.ctx().emplace<std::shared_ptr<game::data::SessionData>>(session_data_);
     registry_.ctx().emplace<std::shared_ptr<game::data::UIConfig>>(ui_config_);
+    registry_.ctx().emplace<std::shared_ptr<game::data::LevelConfig>>(level_config_);
+    registry_.ctx().emplace<std::unordered_map<int, game::data::WaypointNode>&>(waypoint_nodes_);
+    registry_.ctx().emplace<std::vector<int>&>(start_points_);
     registry_.ctx().emplace<game::data::GameStats&>(game_stats_);
+    registry_.ctx().emplace<game::data::Waves&>(waves_);
+    registry_.ctx().emplace<int&>(level_number_);
+
     spdlog::info("registry_ 上下文初始化完成");
     return true;
 }
@@ -189,16 +210,10 @@ bool GameScene::init_systems() {
     return true;
 }
 
-void GameScene::create_test_enemy() {
-    // 每个起点创建一批敌人
-    for (auto start_index : start_points_) {
-        auto position = waypoint_nodes_[start_index].position_;
-
-        entity_factory_->create_enemy_unit("wolf"_hs, position, start_index);
-        entity_factory_->create_enemy_unit("slime"_hs, position, start_index);
-        entity_factory_->create_enemy_unit("goblin"_hs, position, start_index);
-        entity_factory_->create_enemy_unit("dark_witch"_hs, position, start_index);
-    }
+bool GameScene::init_enemy_spawner() {
+    enemy_spawner_ = std::make_unique<game::spawner::EnemySpawner>(registry_, *entity_factory_);
+    spdlog::info("敌人生成器初始化完成");
+    return true;
 }
 
 bool GameScene::on_clear_all_players() {
@@ -230,6 +245,7 @@ void GameScene::update(sf::Time delta) {
     ysort_system_->update(registry_);   // 调用顺序要在MovementSystem之后
 
     // 场景中其他更新函数
+    enemy_spawner_->update(delta);
     units_portrait_ui_->update(delta);
     Scene::update(delta);
 }

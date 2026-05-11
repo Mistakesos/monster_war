@@ -46,6 +46,7 @@ file(GLOB_RECURSE SRC_LIST CMAKE_CONFIGURE_DEPENDS
     ${PROJECT_SOURCE_DIR}/src/game/data/*.cpp
     ${PROJECT_SOURCE_DIR}/src/game/ui/*.cpp
     ${PROJECT_SOURCE_DIR}/src/game/factory/*.cpp
+    ${PROJECT_SOURCE_DIR}/src/game/spawner/*.cpp
     ${PROJECT_SOURCE_DIR}/src/game/system/*.cpp
 )
 

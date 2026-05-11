@@ -1,9 +1,9 @@
 #include <SFML/Graphics/Color.hpp>
+#include <spdlog/spdlog.h>
 #include <string_view>
 #include <random>
 #include <cstdint>
 #include <charconv>
-#include <spdlog/spdlog.h>
 
 namespace engine::utils {
 /**
@@ -59,6 +59,18 @@ inline int range_random(int min_num, int max_num) {
 inline float stat_modify(float base, int level = 1, int rarity = 1) {
     return base * (0.95f + 0.05f * level) * (0.9f + 0.1f * rarity);
     // NOTE: 未来可改成数据驱动方便调整
+}
+
+/**
+ * @brief 打乱容器中元素的顺序（Fisher-Yates 洗牌算法）
+ * @tparam RandomIt 随机访问迭代器类型
+ * @param first 容器起始迭代器
+ * @param last 容器结束迭代器
+ */
+template<typename RandomIt>
+void shuffle(RandomIt first, RandomIt last) {
+    static thread_local std::mt19937 generator{std::random_device{}()};
+    std::shuffle(first, last, generator);
 }
 
 } // namespace engine::utils
