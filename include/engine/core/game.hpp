@@ -1,5 +1,6 @@
 #pragma once
 #include "entt/signal/fwd.hpp"
+#include <SFML/System/Clock.hpp>
 #include <memory>
 #include <functional>
 
@@ -66,6 +67,8 @@ private:
     void update(sf::Time delta);
     void render();
 
+    [[nodiscard]] bool init_imgui();
+
     // 事件处理函数
     void on_quit_event();
 
@@ -74,6 +77,9 @@ private:
 
     // 游戏主窗口
     std::unique_ptr<sf::RenderWindow> window_;
+
+    ///< @brief 游戏时钟
+    sf::Clock clock_;
 
     /// @brief 游戏场景设置函数，用于在运行游戏前设置初始场景 (GameApp不再决定初始场景是什么)
     std::function<void(engine::core::Context&)> scene_setup_func_;

@@ -25,6 +25,7 @@
 #include "game/system/game_rule_system.hpp"
 #include "game/system/place_unit_system.hpp"
 #include "game/system/render_range_system.hpp"
+#include "game/system/debug_ui_system.hpp"
 
 #include "engine/loader/level_loader.hpp"
 #include "game/loader/entity_builder_mw.hpp"
@@ -206,6 +207,7 @@ bool GameScene::init_systems() {
     game_rule_system_ = std::make_unique<game::system::GameRuleSystem>(registry_, dispatcher);
     place_unit_system_ = std::make_unique<game::system::PlaceUnitSystem>(registry_, *entity_factory_, context_);
     render_range_system_ = std::make_unique<game::system::RenderRangeSystem>();
+    debug_ui_system_ = std::make_unique<game::system::DebugUISystem>(registry_, context_);
     spdlog::info("systems 初始化完成");
     return true;
 }
@@ -260,5 +262,7 @@ void GameScene::render() {
     render_range_system_->update(registry_, renderer, camera);
 
     Scene::render();
+
+    debug_ui_system_->update();     // 调试UI的显示优先级最高，最后渲染
 }
 } // namespace game::scene

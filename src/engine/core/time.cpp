@@ -23,8 +23,8 @@ float Time::get_target_fps() const {
     return this->TAEGET_FPS;
 }
 
-void Time::accumulate_frame_time() {
-    elapsed_time += clock_.restart();
+void Time::accumulate_frame_time(sf::Time delta) {
+    elapsed_time += delta;
 }
 
 bool Time::should_update() const {

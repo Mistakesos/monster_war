@@ -4,6 +4,8 @@
 #include "engine/utils/events.hpp"
 #include "entt/signal/dispatcher.hpp"   // IWYU pragma: keep
 #include <SFML/Graphics/RenderWindow.hpp>
+#include <imgui.h>
+#include <imgui-SFML.h>
 #include <spdlog/spdlog.h>
 #include <ranges>
 
@@ -15,7 +17,6 @@ InputManager::InputManager(sf::RenderWindow* window, const engine::core::Config*
     , action_to_input_copy_{config->action_to_input_}
     , dispatcher_{dispatcher}
     , camera_obs_{camera} {
-
     for (const auto& [action, _] : action_to_input_copy_) {
         action_states_.emplace(action, ActionState::Inactive);
     }
@@ -41,6 +42,8 @@ void InputManager::begin_frame() {
 }
 
 void InputManager::handle_event(const sf::Event& event) {
+    ImGui::SFML::ProcessEvent(*window_obs_, event);
+
     // --- 窗口关闭 ---
     if (event.is<sf::Event::Closed>()) {
         window_obs_->close();
@@ -54,6 +57,21 @@ void InputManager::handle_event(const sf::Event& event) {
         }
     }
 
+    // --- 判断 ImGui 是否想捕获输入，决定是否继续分发给游戏 ---
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantCaptureKeyboard) {
+        if (event.is<sf::Event::KeyPressed>() || event.is<sf::Event::KeyReleased>()) {
+            return;
+        }
+    }
+    if (io.WantCaptureMouse) {
+        if (event.is<sf::Event::MouseButtonPressed>() || 
+            event.is<sf::Event::MouseButtonReleased>() ||
+            event.is<sf::Event::MouseWheelScrolled>()) {
+            return;
+        }
+    }
+    
     // --- 按键按下 ---
     if (auto key = event.getIf<sf::Event::KeyPressed>(); key) {
         update(key->scancode, true);

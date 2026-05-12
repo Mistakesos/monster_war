@@ -12,6 +12,8 @@
 #include "engine/utils/events.hpp"
 #include "entt/signal/dispatcher.hpp"
 #include <SFML/Graphics/RenderWindow.hpp>
+#include <imgui.h>
+#include <imgui-SFML.h>
 #include <spdlog/spdlog.h>
 
 namespace engine::core {
@@ -54,13 +56,20 @@ Game::Game()
     audio_player_->set_music_volume(config_->music_volume_);    // 设置背景音乐音量
     audio_player_->set_sound_volume(config_->sound_volume_);    // 设置音效音量
 
+    if (!init_imgui()) return;
+    
     // 注册退出事件（回调函数可以无参数，代表不使用事件结构体中的数据）
     dispatcher_->sink<utils::QuitEvent>().connect<&Game::on_quit_event>(this);
+
+    spdlog::trace("Game 初始化成功。");
 }
 
 Game::~Game() {
     spdlog::trace("关闭 Game ...");
 
+    // --- ImGui 步骤4 清理 ---
+    ImGui::SFML::Shutdown();
+        
     // 断开事件处理函数
     dispatcher_->sink<utils::QuitEvent>().disconnect<&Game::on_quit_event>(this);
 }
@@ -72,13 +81,17 @@ void Game::run() {
     time_->set_target_fps(config_->target_fps_);
 
     while (window_->isOpen()) {
+        const sf::Time delta = clock_.restart();
+
         // --- 输入帧开始 ---
         input_manager_->begin_frame();
 
         handle_event();
 
+        ImGui::SFML::Update(*window_, delta);
+
         // --- 固定步长更新 ---
-        time_->accumulate_frame_time();
+        time_->accumulate_frame_time(delta);
         while (time_->should_update()) {
             time_->consume_update_time();
             update(time_->get_frame_duration());
@@ -115,7 +128,55 @@ void Game::render() {
 
     scene_manager_->render();
 
+    // 在场景渲染完成后、但显示之前，提交所有 ImGui 绘制数据
+    ImGui::SFML::Render(*window_);
+
     renderer_->display_frame();
+}
+
+bool Game::init_imgui() {
+    // 3. 初始化 imgui-sfml 后端
+    // 这个调用会创建 ImGui 上下文并关联到 SFML 窗口。
+    if (!ImGui::SFML::Init(*window_)) {
+        spdlog::error("ImGui-SFML 初始化失败！");
+        return false;
+    }
+
+    /* --- 可选配置开始 --- */
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    ImGui::StyleColorsDark();
+
+    // 设置缩放
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.ScaleAllSizes(1.f); // 暂设为 1.0
+
+    // 设置透明度
+    float window_alpha = 0.5f;
+
+    // 修改各个UI元素的透明度
+    style.Colors[ImGuiCol_WindowBg].w = window_alpha;
+    style.Colors[ImGuiCol_PopupBg].w = window_alpha;
+
+    // 4. 正确的字体加载流程
+    // a. 调用 AddFontFromFileTTF 加载你的中文字体
+    io.Fonts->Clear();
+    auto* font = io.Fonts->AddFontFromFileTTF(
+        "assets/fonts/VonwaonBitmap-16px.ttf", 16.f, nullptr,
+        io.Fonts->GetGlyphRangesChineseFull());
+    // b. 如果加载失败，可以回退到默认字体(ImGui::SFML::Init 会创建一个默认字体)
+    if (!font) {
+        spdlog::warn("警告：无法加载中文字体，中文字符将无法正确显示。");
+    }
+    // c. 关键！必须调用此函数，它会根据你新加载的字体重新生成 ImGui 内部使用的纹理。
+    if (!ImGui::SFML::UpdateFontTexture()) {
+        spdlog::error("更新字体失败！");
+    }
+    /* --- 可选配置结束 --- */
+
+    spdlog::trace("ImGui 初始化成功。");
+    return true;
 }
 
 void engine::core::Game::on_quit_event() {

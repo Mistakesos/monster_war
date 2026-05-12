@@ -1,7 +1,6 @@
 #pragma once
 
 #include <SFML/System/Time.hpp>
-#include <SFML/System/Clock.hpp>
 
 namespace engine::core {
 /**
@@ -48,7 +47,7 @@ public:
     /**
      * @brief 累加时间
      */
-    void accumulate_frame_time();
+    void accumulate_frame_time(sf::Time delta);
 
     /**
      * @brief 是否要更新游戏逻辑
@@ -64,7 +63,6 @@ public:
 private:
     float TAEGET_FPS = 60.f;                                    // 目标帧率
 
-    sf::Clock clock_;                                           // 内部维护的时钟
     sf::Time elapsed_time = sf::Time::Zero;                     // 自上次更新以来的时间
     sf::Time time_per_frame_ = sf::Time::Zero;                  // 目标帧间隔
     float time_scale_ = 1.f;                                    // 时间缩放因子

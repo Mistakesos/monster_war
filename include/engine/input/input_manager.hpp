@@ -64,8 +64,8 @@ private:
 
     void toggle_fullscreen();
 
-    sf::RenderWindow* window_obs_ = nullptr;        ///< @brief 用于传入获取鼠标的逻辑位置
-    const engine::core::Config* config_obs_ = nullptr;    ///< @brief 配置文件的非拥有指针
+    sf::RenderWindow* window_obs_ = nullptr;                ///< @brief 用于传入获取鼠标的逻辑位置
+    const engine::core::Config* config_obs_ = nullptr;      ///< @brief 配置文件的非拥有指针
     /**
      * @brief 核心数据结构：存储动作名称函数列表的映射
      * 
@@ -78,7 +78,7 @@ private:
     std::unordered_map<Action, std::vector<std::variant<Scancode, Button>>> action_to_input_copy_;     ///< @brief 动作到具体输入
     std::unordered_map<Action, ActionState> action_states_;                                            ///< @brief 储存每个动作当前的状态
 
-    bool is_full_screen_ = false;        ///< @brief 是否全屏
+    bool is_full_screen_ = false;                   ///< @brief 是否全屏
     entt::dispatcher* dispatcher_;
     engine::render::Camera* camera_obs_ = nullptr;  ///< @brief 相机的非拥有指针，用于坐标转换
 };
