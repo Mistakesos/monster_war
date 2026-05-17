@@ -6,7 +6,8 @@ namespace game::defs {
 
 constexpr float BLOCK_RADIUS = 40.f;   ///< @brief 阻挡半径
 constexpr float UNIT_RADIUS = 20.f;    ///< @brief 角色自身半径（相当于碰撞盒，用于计算攻击范围）
-constexpr float PLACE_RADIUS = 40.0f;  ///< @brief 放置区域半径（相当于碰撞盒，用于检测鼠标是否处在可放置位置）
+constexpr float PLACE_RADIUS = 40.f;   ///< @brief 放置区域半径（相当于碰撞盒，用于检测鼠标是否处在可放置位置）
+constexpr float HOVER_RADIUS = 30.f;   ///< @brief 鼠标悬浮检测半径（相当于碰撞盒，用于检测鼠标是否处在可选中单位上）
 
 constexpr sf::Color RANGE_COLOR = {    ///< @brief 攻击范围显示的颜色（RGBA）
     0, 255, 0, 77                      // 透明绿色

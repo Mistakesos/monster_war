@@ -1,4 +1,8 @@
 #include "game/system/debug_ui_system.hpp"
+#include "game/component/stats_component.hpp"
+#include "game/component/class_name_component.hpp"
+#include "game/component/blocker_component.hpp"
+#include "engine/component/name_component.hpp"
 #include "engine/core/context.hpp"
 #include <imgui.h>
 #include <entt/entity/registry.hpp>
@@ -15,26 +19,78 @@ DebugUISystem::DebugUISystem(entt::registry& registry, engine::core::Context& co
 }
 
 void DebugUISystem::update() {
-    render_demo_ui();
+    render_hovered_unit();
+    render_selected_unit();
 }
 
-void DebugUISystem::render_demo_ui() {
-    // --- 中文显示测试 ---
-    static float volume_value = 0.5f;
-    ImGui::Begin("窗口1");
-    ImGui::Text("这是第一个窗口");
-    ImGui::SetWindowFontScale(1.5f);
-    if (ImGui::Button("按钮1", ImVec2(200, 60))) {
-        spdlog::info("按钮1被点击");
-    }
-    ImGui::SetWindowFontScale(1.f);
-    if (ImGui::SliderFloat("音量", &volume_value, 0.f, 1.f)) {
-        spdlog::info("音量被调整: {}", volume_value);
-    }
-    ImGui::End();
+void DebugUISystem::render_hovered_unit() {
+    // 确定鼠标悬浮的单位存在
+    auto& entity = registry_.ctx().get<entt::entity&>("hovered_unit"_hs);
+    if (entity == entt::null || !registry_.valid(entity)) return;
 
-    // 显示 ImGui 自带的 Demo 窗口
-    ImGui::ShowDemoWindow();
+    // Tooltip 是悬浮在鼠标上的小窗口，可以显示单位信息
+    if (!ImGui::BeginTooltip()) {
+        ImGui::EndTooltip();
+        spdlog::error("鼠标悬浮单位窗口打开失败");
+        return;
+    }
+    // 获取必要信息并显示
+    const auto& stats = registry_.get<game::component::StatsComponent>(entity);
+    const auto& class_name = registry_.get<game::component::ClassNameComponent>(entity);
+    // 只有玩家单位才有姓名，所以需要尝试获取
+    if (auto name = registry_.try_get<engine::component::NameComponent>(entity); name) {
+        ImGui::Text("%s  ", name->name_.c_str());
+        ImGui::SameLine();
+    }
+    ImGui::Text("%s", class_name.class_name_.c_str());
+    ImGui::Text("等级: %d", stats.level_);
+    ImGui::SameLine();
+    ImGui::Text("稀有度: %d", stats.rarity_);
+    ImGui::Text("生命值: %d/%d", static_cast<int>(std::round(stats.hp_)), static_cast<int>(std::round(stats.max_hp_)));
+    ImGui::Text("攻击力: %d", static_cast<int>(std::round(stats.atk_)));
+    ImGui::Text("防御力: %d", static_cast<int>(std::round(stats.def_)));
+    ImGui::Text("攻击范围: %d", static_cast<int>(std::round(stats.range_)));
+    ImGui::Text("攻击间隔: %.2f", stats.atk_interval_.asSeconds());
+    ImGui::EndTooltip();
+}
+
+void DebugUISystem::render_selected_unit() {
+    // 确定选中的单位存在
+    auto& entity = registry_.ctx().get<entt::entity&>("selected_unit"_hs);
+    if (entity == entt::null || !registry_.valid(entity)) return;
+
+    // 设置窗口位置在左上角
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always);
+
+    if (!ImGui::Begin("角色状态", nullptr, ImGuiWindowFlags_NoTitleBar)) {
+        ImGui::End();
+        spdlog::error("角色状态窗口打开失败");
+        return;
+    }
+    // 获取必要信息并显示
+    const auto& stats = registry_.get<game::component::StatsComponent>(entity);
+    const auto& class_name = registry_.get<game::component::ClassNameComponent>(entity);
+    const auto blocker = registry_.try_get<game::component::BlockerComponent>(entity);
+    if (auto name = registry_.try_get<engine::component::NameComponent>(entity); name) {
+        ImGui::Text("%s  ", name->name_.c_str());
+        ImGui::SameLine();
+    }
+    ImGui::Text("%s", class_name.class_name_.c_str());
+    ImGui::Text("等级: %d", stats.level_);
+    ImGui::SameLine();
+    ImGui::Text("稀有度: %d", stats.rarity_);
+    ImGui::Text("生命值: %d/%d", static_cast<int>(std::round(stats.hp_)), static_cast<int>(std::round(stats.max_hp_)));
+    ImGui::Text("攻击力: %d", static_cast<int>(std::round(stats.atk_)));
+    ImGui::SameLine();
+    ImGui::Text("防御力: %d", static_cast<int>(std::round(stats.def_)));
+    ImGui::Text("攻击范围: %d", static_cast<int>(std::round(stats.range_)));
+    ImGui::SameLine();
+    ImGui::Text("攻击间隔: %.2f", stats.atk_interval_.asSeconds());
+    if (blocker) {
+        ImGui::Text("阻挡数量: %d/%d", blocker->current_count_, blocker->max_count_);
+    }
+    // TODO: 技能相关按钮与信息
+    ImGui::End();
 }
 
 } // namespace game::system

@@ -1,5 +1,6 @@
 #include "game/system/render_range_system.hpp"
 #include "game/component/unit_prep_component.hpp"
+#include "game/component/stats_component.hpp"
 #include "game/defs/tags.hpp"
 #include "engine/component/transform_component.hpp"
 #include "engine/render/render.hpp"
@@ -16,7 +17,12 @@ void RenderRangeSystem::update(entt::registry& registry, engine::render::Rendere
         // 攻击范围显示为透明绿色圆形
         renderer.draw_filled_circle(camera, prep.range_, transform.position_, game::defs::RANGE_COLOR);
     }
-    // TODO: 地图上的远程单位
+    // 地图上的单位
+    auto view_remote = registry.view<game::defs::ShowRangeTag, engine::component::TransformComponent, game::component::StatsComponent>();
+    for (auto&& [entity, transform, stats] : view_remote.each()) {
+        // 攻击范围显示为透明绿色圆形
+        renderer.draw_filled_circle(camera, stats.range_, transform.position_, game::defs::RANGE_COLOR);
+    }
 }
 
 }   // namespace game::system

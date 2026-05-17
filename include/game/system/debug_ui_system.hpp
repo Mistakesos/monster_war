@@ -21,7 +21,8 @@ public:
 
 private:
     // 封装每个UI显示模块
-    void render_demo_ui();
+    void render_hovered_unit();
+    void render_selected_unit();
 
     entt::registry& registry_;
     engine::core::Context& context_;
