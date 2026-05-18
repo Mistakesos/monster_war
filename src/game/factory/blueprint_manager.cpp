@@ -157,6 +157,44 @@ bool BlueprintManager::load_effect_blueprints(std::string_view effect_json_path)
     return true;
 }
 
+bool BlueprintManager::load_skill_blueprints(std::string_view skill_json_path) {
+    auto path = std::filesystem::path(skill_json_path);
+    std::ifstream file(path);
+    nlohmann::json json;
+    file >> json;
+    file.close();
+    // --- 解析蓝图 ---
+    try {
+        for (auto& [key, data_json] : json.items()) {
+            // 解析基础数据
+            entt::id_type id = entt::hashed_string(key.c_str());
+            std::string name_str = data_json.value("name", "");
+            std::string description_str = data_json.value("description", "");
+            bool passive = data_json.value("passive", false);
+            sf::Time cooldown = sf::seconds(data_json.value("cooldown", 0.f));
+            sf::Time duration = sf::seconds(data_json.value("duration", 0.f));
+
+            // 解析 Buff
+            game::data::BuffBlueprint buff = parse_buff(data_json);
+        
+            // 解析完毕，组合蓝图并插入容器
+            skill_blueprints_.emplace(id, data::SkillBlueprint{id,
+                name_str,
+                description_str,
+                passive,
+                cooldown,
+                duration,
+                std::move(buff),
+            });
+        }
+    }
+    catch (const std::exception& e) {
+        spdlog::error("加载技能数据时出错: {}", e.what());
+        return false;
+    }
+    return true;
+}
+
 const data::PlayerClassBlueprint& BlueprintManager::get_player_class_blueprint(entt::id_type id) const {
     if (auto it = player_class_blueprints_.find(id); it != player_class_blueprints_.end()) {
         return it->second;
@@ -187,6 +225,14 @@ const data::EffectBlueprint& BlueprintManager::get_effect_blueprint(entt::id_typ
     }
     spdlog::error("未找到对应 id 的 EffectBlueprint: {}", id);
     return effect_blueprints_.begin()->second;
+}
+
+const data::SkillBlueprint& BlueprintManager::get_skill_blueprint(entt::id_type id) const {
+    if (auto it = skill_blueprints_.find(id); it != skill_blueprints_.end()) {
+        return it->second;
+    }
+    spdlog::error("未找到对应 id 的 SkillBlueprint: {}", id);
+    return skill_blueprints_.begin()->second;
 }
 
 // --- 拆分步骤的私有解析函数 ---
@@ -307,6 +353,17 @@ data::EnemyBlueprint BlueprintManager::parse_enemy(const nlohmann::json& json) {
 data::DisplayInfoBlueprint BlueprintManager::parse_display_info(const nlohmann::json& json) {
     // 显示信息蓝图只包含“名称”和“描述”
     return data::DisplayInfoBlueprint{json.value("name", ""), json.value("description", "")};
+}
+
+data::BuffBlueprint BlueprintManager::parse_buff(const nlohmann::json& json) {
+    // 下面的属性有则设置，无则按默认
+    return data::BuffBlueprint{json.value("hp", 1.f),
+        json.value("atk", 1.f),
+        json.value("def", 1.f),
+        json.value("range", 1.f),
+        json.value("atk_interval", 1.f),
+        json.value("cost_regen", 0.f)
+    };
 }
 
 }   // namespace game::factory

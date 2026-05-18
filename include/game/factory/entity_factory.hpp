@@ -79,6 +79,14 @@ public:
      * @return 特效实体
      */
     entt::entity create_effect(entt::id_type effect_id, const sf::Vector2f& position, const bool is_flipped = false);
+
+    /**
+     * @brief 创建技能显示实体
+     * @param id 技能ID
+     * @param position 位置
+     * @return 技能显示实体
+     */
+    entt::entity create_skill_display(entt::id_type effect_id, const sf::Vector2f& position);
     // TODO: 未来添加其他实体的创建函数
 
 private:
@@ -99,6 +107,7 @@ private:
     void add_enemy_component(entt::entity entity, const data::EnemyBlueprint& enemy, int target_waypoint_id);
     void add_audio_component(entt::entity entity, const data::SoundBlueprint& sounds);
     void add_projectile_id_component(entt::entity entity, entt::id_type id);
+    void add_skill_component(entt::entity entity, entt::id_type skill_id);
     // TODO: 未来添加其他组件创建函数
 
     entt::registry& registry_;

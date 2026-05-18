@@ -17,6 +17,7 @@
 #include "game/component/blocker_component.hpp"
 #include "game/component/projectile_component.hpp"
 #include "game/component/unit_prep_component.hpp"
+#include "game/component/skill_component.hpp"
 #include <SFML/Graphics/Rect.hpp>
 #include <entt/entity/registry.hpp>
 #include <entt/core/hashed_string.hpp>
@@ -56,6 +57,9 @@ entt::entity EntityFactory::create_player_unit(entt::id_type class_id, const sf:
 
     // 添加ProjectileID组件
     add_projectile_id_component(entity, blueprint.projectile_id_);
+
+    // 添加Skill组件
+    add_skill_component(entity, blueprint.player_.skill_id_);
 
     // 补充其他必要组件
     registry_.emplace<game::component::ClassNameComponent>(entity, class_id, blueprint.display_info_.name_);
@@ -184,6 +188,20 @@ entt::entity EntityFactory::create_effect(entt::id_type effect_id, const sf::Vec
     return entity;
 }
 
+entt::entity EntityFactory::create_skill_display(entt::id_type effect_id, const sf::Vector2f& position) {
+    auto entity = registry_.create();
+    const auto& effect_blueprint = blueprint_manager_.get_effect_blueprint(effect_id);
+    // 添加Transform组件
+    add_transform_component(entity, position);
+    // 添加Sprite组件
+    add_sprite_component(entity, effect_blueprint.sprite_);
+    // 添加Animation组件 (角色上方的技能标识，循环播放)
+    add_one_animation_component(entity, effect_blueprint.animation_, effect_blueprint.sprite_, effect_id, true);
+    // 补充其他必要组件
+    registry_.emplace<engine::component::RenderComponent>(entity, engine::component::RenderComponent::MAIN_LAYER + 20);
+    return entity;
+}
+
 void EntityFactory::add_transform_component(entt::entity entity, const sf::Vector2f& position, const sf::Vector2f& scale, sf::Angle rotation) {
     registry_.emplace<engine::component::TransformComponent>(entity, position, scale, rotation);
 }
@@ -198,6 +216,7 @@ void EntityFactory::add_sprite_component(entt::entity entity, const data::Sprite
     
     auto& transform = registry_.get<engine::component::TransformComponent>(entity);
     transform.origin_ = sprite.origin_;
+    transform.scale_ = sprite.size_.componentWiseDiv(sprite.src_rect_.size);
     // 如果翻转，设置 x 负缩放
     if (is_flipped) {
         transform.scale_ = {-transform.scale_.x, transform.scale_.y};
@@ -323,6 +342,24 @@ void EntityFactory::add_audio_component(entt::entity entity, const data::SoundBl
 void EntityFactory::add_projectile_id_component(entt::entity entity, entt::id_type id) {
     if (id == entt::null) return;
     registry_.emplace<game::component::ProjectileIDComponent>(entity, id);
+}
+
+void EntityFactory::add_skill_component(entt::entity entity, entt::id_type skill_id) {
+    const auto& skill = blueprint_manager_.get_skill_blueprint(skill_id);
+    registry_.emplace<game::component::SkillComponent>(entity, 
+        skill_id, 
+        entt::null,
+        skill.name_, 
+        skill.description_, 
+        skill.cooldown_, 
+        skill.duration_,
+        skill.cooldown_ / 2.f,         // 初始技能冷却时间为技能冷却时间的一半
+        sf::Time::Zero);
+    // 如果是被动技能，则添加PassiveSkillTag与SkillReadyTag
+    if (skill.passive_) {
+        registry_.emplace<game::defs::PassiveSkillTag>(entity);
+        registry_.emplace<game::defs::SkillReadyTag>(entity);
+    }
 }
 
 }   // namespace game::factory

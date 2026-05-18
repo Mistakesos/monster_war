@@ -13,6 +13,8 @@ constexpr sf::Color RANGE_COLOR = {    ///< @brief 攻击范围显示的颜色�
     0, 255, 0, 77                      // 透明绿色
 };
 
+constexpr sf::Vector2f SKILL_DISPLAY_OFFSET = {0.0f, -96.0f};   ///< @brief 技能显示实体的偏移量
+
 constexpr sf::Vector2f HEALTH_BAR_SIZE = {48.f, 8.f};    ///< @brief 血量条大小
 constexpr float HEALTH_BAR_OFFSET_Y = 8.f;               ///< @brief 血量条竖直方向偏移量（水平方向默认正中间）
 

@@ -1,5 +1,6 @@
 #include "game/system/game_rule_system.hpp"
 #include "game/data/game_stats.hpp"
+#include "game/component/cost_regen_component.hpp"
 #include <entt/entity/registry.hpp>
 #include <entt/signal/dispatcher.hpp>
 #include <spdlog/spdlog.h>
@@ -16,7 +17,11 @@ void GameRuleSystem::update(sf::Time delta) {
     // 更新Cost
     auto& game_stats = registry_.ctx().get<game::data::GameStats&>();
     game_stats.cost_ += game_stats.cost_gen_per_second_ * delta.asSeconds();
-    // TODO: 可能的buff效果
+    // 更新COST恢复
+    auto view_cost_regen = registry_.view<game::component::CostRegenComponent>();
+    for (auto&& [entity, cost_regen] : view_cost_regen->each()) {
+        game_stats.cost_ += cost_regen.rate_ * delta.asSeconds();
+    }
 }
 
 void GameRuleSystem::on_enemy_arrive_home(const game::defs::EnemyArriveHomeEvent&) {

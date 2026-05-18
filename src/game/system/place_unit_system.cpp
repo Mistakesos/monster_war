@@ -170,6 +170,10 @@ bool PlaceUnitSystem::on_place_unit() {
             auto& render_player = registry_.get<engine::component::RenderComponent>(unit_entity);
             render_player.layer_ = render_place.layer_ + 1;
         }
+        // 如果拥有被动技能，则立刻释放技能
+        if (registry_.all_of<game::defs::PassiveSkillTag>(unit_entity)) {
+            context_.get_dispatcher().enqueue(game::defs::SkillActiveEvent{unit_entity});
+        }
     }
     // 播放放置音效
     context_.get_audio_player().play_sound("unit_placed"_hs);
