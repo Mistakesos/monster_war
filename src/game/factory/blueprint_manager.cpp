@@ -130,6 +130,33 @@ bool BlueprintManager::load_projectile_blueprints(std::string_view projectile_js
     return true;
 }
 
+bool BlueprintManager::load_effect_blueprints(std::string_view effect_json_path) {
+    auto path = std::filesystem::path(effect_json_path);
+    std::ifstream file(path);
+    nlohmann::json json;
+    file >> json;
+    file.close();
+    // --- 解析蓝图 ---
+    try {
+        for (auto& [name, data_json] : json.items()) {
+            entt::id_type id = entt::hashed_string(name.c_str());
+            // 解析 Sprite
+            data::SpriteBlueprint sprite = parse_sprite(data_json);
+            // 解析 Animation (单个动画)
+            data::AnimationBlueprint animation = parse_one_animation(data_json);
+            // 解析完毕，组合蓝图并插入容器
+            effect_blueprints_.emplace(id, data::EffectBlueprint{id, 
+                name, 
+                std::move(sprite),
+                std::move(animation)});
+        }
+    } catch (const std::exception& e) {
+        spdlog::error("加载效果数据时出错: {}", e.what());
+        return false;
+    }
+    return true;
+}
+
 const data::PlayerClassBlueprint& BlueprintManager::get_player_class_blueprint(entt::id_type id) const {
     if (auto it = player_class_blueprints_.find(id); it != player_class_blueprints_.end()) {
         return it->second;
@@ -152,6 +179,14 @@ const data::ProjectileBlueprint& BlueprintManager::get_projectile_blueprint(entt
     }
     spdlog::error("未找到对应 id 的 ProjectileBlueprint: {}", id);
     return projectile_blueprints_.begin()->second;
+}
+
+const data::EffectBlueprint& BlueprintManager::get_effect_blueprint(entt::id_type id) const {
+    if (auto it = effect_blueprints_.find(id); it != effect_blueprints_.end()) {
+        return it->second;
+    }
+    spdlog::error("未找到对应 id 的 EffectBlueprint: {}", id);
+    return effect_blueprints_.begin()->second;
 }
 
 // --- 拆分步骤的私有解析函数 ---
@@ -209,6 +244,22 @@ std::unordered_map<entt::id_type, data::AnimationBlueprint> BlueprintManager::pa
         animations.emplace(anim_name_id, animation);
     }
     return animations;
+}
+
+data::AnimationBlueprint BlueprintManager::parse_one_animation(const nlohmann::json& json) {
+    auto anim_data = json["animation"];
+    std::vector<int> frames = anim_data["frames"].get<std::vector<int>>();
+    std::unordered_map<int, entt::id_type> events;
+    if (anim_data.contains("events")) {
+        for (auto& [event_name, event_frame] : anim_data["events"].items()) {
+            events.emplace(event_frame.get<int>(), entt::hashed_string(event_name.c_str()));
+        }
+    }
+    return data::AnimationBlueprint{sf::milliseconds(anim_data.value("duration", 100.f)), 
+        anim_data.value("row", 0), 
+        std::move(frames),
+        std::move(events)
+    };
 }
 
 data::SoundBlueprint BlueprintManager::parse_sound(const nlohmann::json& json) {

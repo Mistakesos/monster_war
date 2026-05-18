@@ -147,7 +147,8 @@ bool GameScene::init_entity_factory() {
         blueprint_manager_ = std::make_shared<game::factory::BlueprintManager>(context_.get_resource_manager());
         if (!blueprint_manager_->load_enemy_class_blueprints("assets/data/enemy_data.json") ||
             !blueprint_manager_->load_player_class_blueprints("assets/data/player_data.json") ||
-            !blueprint_manager_->load_projectile_blueprints("assets/data/projectile_data.json")) {
+            !blueprint_manager_->load_projectile_blueprints("assets/data/projectile_data.json") ||
+            !blueprint_manager_->load_effect_blueprints("assets/data/effect_data.json")) {
             spdlog::error("加载蓝图失败");
             return false;
         }

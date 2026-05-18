@@ -20,6 +20,7 @@ public:
 private:
     // 事件回调函数
     void on_enemy_dead_effect_event(const game::defs::EnemyDeadEffectEvent& event); ///< @brief 敌人死亡特效事件
+    void on_effect_event(const game::defs::EffectEvent& event);                     ///< @brief (通用)特效事件
     // TODO: 未来添加其他特效事件回调函数
 
     entt::registry& registry_;

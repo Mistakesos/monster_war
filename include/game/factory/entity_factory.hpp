@@ -70,6 +70,15 @@ public:
      * @return 敌人死亡特效实体
      */
     entt::entity create_enemy_dead_effect(entt::id_type class_id, const sf::Vector2f& position, const bool is_flipped = false);
+
+    /**
+     * @brief 创建（通用）特效，数据来自特效蓝图
+     * @param effect_id 特效ID
+     * @param position 位置
+     * @param is_flipped 是否翻转
+     * @return 特效实体
+     */
+    entt::entity create_effect(entt::id_type effect_id, const sf::Vector2f& position, const bool is_flipped = false);
     // TODO: 未来添加其他实体的创建函数
 
 private:
