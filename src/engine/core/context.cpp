@@ -14,14 +14,16 @@ Context::Context(entt::dispatcher& dispatcher
                , engine::render::Camera& camera
                , engine::resource::ResourceManager& resource_manager
                , engine::audio::AudioPlayer& audio_player
-               , engine::core::GameState& game_state)
+               , engine::core::GameState& game_state
+               , engine::core::Time& time)
     : dispatcher_{dispatcher}
     , input_manager_{input_manager}
     , renderer_{renderer}
     , camera_{camera}
     , resource_manager_{resource_manager}
     , audio_player_{audio_player}
-    , game_state_{game_state} {
+    , game_state_{game_state}
+    , time_{time} {
     spdlog::trace("上下文已创建并初始化");
 }
 } // namespace engine::core

@@ -34,7 +34,8 @@ Game::Game()
                                                      , *camera_
                                                      , *resource_manager_
                                                      , *audio_player_
-                                                     , *game_state_)}
+                                                     , *game_state_
+                                                     , *time_)}
     , scene_manager_{std::make_unique<engine::scene::SceneManager>(*context_)} {
     // 根据缩放调整窗口大小
     sf::Vector2u window_size = static_cast<sf::Vector2u>(static_cast<sf::Vector2f>(config_->window_size_) * config_->window_scale_);

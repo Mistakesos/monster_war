@@ -22,7 +22,7 @@ public:
     /**
      * @brief 获取帧间隔
      */
-    const sf::Time& get_frame_duration() const;
+    const sf::Time get_frame_duration() const;
 
     /**
      * @brief 设置时间缩放因子
@@ -61,7 +61,7 @@ public:
     void consume_update_time();
     
 private:
-    float TAEGET_FPS = 60.f;                                    // 目标帧率
+    float TARGET_FPS = 60.f;                                    // 目标帧率
 
     sf::Time elapsed_time = sf::Time::Zero;                     // 自上次更新以来的时间
     sf::Time time_per_frame_ = sf::Time::Zero;                  // 目标帧间隔

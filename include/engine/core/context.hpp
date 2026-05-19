@@ -21,6 +21,7 @@ namespace engine::audio {
 
 namespace engine::core {
 class GameState;
+class Time;
 
 /**
  * @brief 持有对核心引擎模块引用的上下文对象
@@ -30,11 +31,14 @@ class GameState;
 class Context final {
 public:
     /**
-     * @brief 构造函数。
+     * @param dispatcher 对事件分发器的引用。
      * @param input_manager 对 InputManager 实例的引用。
      * @param renderer 对 Renderer 实例的引用。
      * @param camera 对 Camera 实例的引用。
      * @param resource_manager 对 ResourceManager 实例的引用。
+     * @param audio_player 对 AudioPlayer 实例的引用。
+     * @param game_state 对 GameState 实例的引用。
+     * @param time 对 Time 实例的引用。
      */
     Context(entt::dispatcher& dispatcher
           , engine::input::InputManager& input_manager
@@ -42,7 +46,8 @@ public:
           , engine::render::Camera& camera
           , engine::resource::ResourceManager& resource_manager
           , engine::audio::AudioPlayer& audio_player
-          , engine::core::GameState& game_state);
+          , engine::core::GameState& game_state
+          , engine::core::Time& time);
     ~Context() = default;
 
     // 禁止拷贝和移动，Context 对象通常是唯一的或按需创建/传递
@@ -59,6 +64,7 @@ public:
     engine::resource::ResourceManager& get_resource_manager() const { return resource_manager_; }///< @brief 获取资源管理器
     engine::audio::AudioPlayer& get_audio_player() const { return audio_player_; }               ///< @brief 获取音频播放器
     engine::core::GameState& get_game_state() const { return game_state_; }                      ///< @brief 获取游戏状态
+    engine::core::Time& get_time() const { return time_; }                                        ///< @brief 获取时间
 
 private:
     entt::dispatcher& dispatcher_;                              ///< @brief 事件分发器
@@ -68,5 +74,6 @@ private:
     engine::resource::ResourceManager& resource_manager_;       ///< @brief 资源管理器
     engine::audio::AudioPlayer& audio_player_;                  ///< @brief 音频播放器
     engine::core::GameState& game_state_;                       ///< @brief 游戏状态
+    engine::core::Time& time_;                                  ///< @brief 时间
 };
 } // namespace engine::core

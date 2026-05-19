@@ -1,8 +1,6 @@
 #include "game/scene/game_scene.hpp"
-#include "engine/input/input_manager.hpp"
+#include "engine/core/game_state.hpp"
 #include "engine/render/camera.hpp"
-
-#include "game/component/player_component.hpp"
 
 #include "engine/system/render_system.hpp"
 #include "engine/system/movement_system.hpp"
@@ -49,8 +47,16 @@
 using namespace entt::literals;
 
 namespace game::scene {
-GameScene::GameScene(engine::core::Context& context)
-    : Scene{"GameScene", context} {
+GameScene::GameScene(engine::core::Context& context,
+    std::shared_ptr<game::factory::BlueprintManager> blueprint_manager,
+    std::shared_ptr<game::data::SessionData> session_data,
+    std::shared_ptr<game::data::UIConfig> ui_config,
+    std::shared_ptr<game::data::LevelConfig> level_config)
+    : engine::scene::Scene("GameScene", context)
+    , blueprint_manager_{blueprint_manager}
+    , session_data_{session_data}
+    , ui_config_{ui_config}
+    , level_config_{level_config} {
     if (!init_session_data())           { spdlog::error("初始化session_data_失败"); return; }
     if (!init_level_config())           { spdlog::error("初始化关卡配置失败"); return; }
     if (!init_ui_config())              { spdlog::error("初始化UI配置失败"); return; }
@@ -63,16 +69,15 @@ GameScene::GameScene(engine::core::Context& context)
     if (!init_enemy_spawner())          { spdlog::error("初始化敌人生成器失败"); return; }
     if (!init_units_portrait_ui())      { spdlog::error("初始化单位肖像UI失败"); return; }
 
+    context_.get_game_state().set_state(engine::core::State::Playing);
+
     spdlog::info("GameScene 构造完成");
 }
 
 GameScene::~GameScene() {
     auto& dispatcher = context_.get_dispatcher();
-    auto& input_manager = context_.get_input_manager();
     // 断开所有事件连接
     dispatcher.disconnect(this);
-    // 断开输入信号连接
-    input_manager.on_action(Action::Pause).disconnect<&GameScene::on_clear_all_players>(this);
 }
 
 bool GameScene::init_session_data() {
@@ -132,13 +137,15 @@ bool GameScene::load_level() {
 }
 
 bool GameScene::init_event_connections() {
-    // auto& dispatcher = context_.get_dispatcher();
+    auto& dispatcher = context_.get_dispatcher();
+    dispatcher.sink<game::defs::RestartEvent>().connect<&GameScene::on_restart>(this);
+    dispatcher.sink<game::defs::BackToTitleEvent>().connect<&GameScene::on_back_to_title>(this);
+    dispatcher.sink<game::defs::SaveEvent>().connect<&GameScene::on_save>(this);
     return true;
 }
 
 bool GameScene::init_input_connections() {
-    auto& input_manager = context_.get_input_manager();
-    input_manager.on_action(Action::Pause).connect<&GameScene::on_clear_all_players>(this);
+    // auto& input_manager = context_.get_input_manager();
     return true;
 }
 
@@ -226,12 +233,32 @@ bool GameScene::init_enemy_spawner() {
     return true;
 }
 
-bool GameScene::on_clear_all_players() {
-    auto view = registry_.view<game::component::PlayerComponent>();
-    for (auto entity : view) {
-        context_.get_dispatcher().enqueue(game::defs::RemovePlayerUnitEvent{entity});
-    }
-    return true;
+// --- 场景相关函数 ---
+void GameScene::on_restart() {
+    spdlog::info("重新开始关卡");
+    request_replace_scene(std::make_unique<game::scene::GameScene>(
+        context_, 
+        blueprint_manager_,
+        session_data_,
+        ui_config_,
+        level_config_
+        )
+    );
+}
+
+void GameScene::on_back_to_title() {
+    spdlog::info("返回标题");
+    // TODO: 返回标题
+}
+
+void GameScene::on_save() {
+    spdlog::info("保存");
+    // TODO: 保存
+}
+
+void GameScene::on_level_clear() {
+    spdlog::info("关卡通关");
+    // TODO: 关卡通关
 }
 
 void GameScene::update(sf::Time delta) {
@@ -240,6 +267,16 @@ void GameScene::update(sf::Time delta) {
     // 每一帧最先清理死亡实体(要在dispatcher处理完事件后再清理，因此放在下一帧开头)
     remove_dead_system_->update(registry_);
     
+    // 暂停状态下，有些功能依然正常运行
+    if (context_.get_game_state().is_paused()) {
+        place_unit_system_->update(delta);
+        ysort_system_->update(registry_);
+        selection_system_->update();
+        units_portrait_ui_->update(delta);
+        Scene::update(delta);
+        return;
+    }
+
     // 注意系统更新的顺序
     timer_system_->update(delta);
     game_rule_system_->update(delta);

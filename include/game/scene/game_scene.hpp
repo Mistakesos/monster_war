@@ -32,7 +32,21 @@ namespace game::scene {
  */
 class GameScene final : public engine::scene::Scene {
 public:
-    GameScene(engine::core::Context& context);
+    /**
+     * @brief 构造函数
+     * @param context 上下文
+     * @param blueprint_manager 蓝图管理器
+     * @param session_data 场景间传递的关卡数据
+     * @param ui_config UI配置
+     * @param level_config 关卡配置
+     */
+    GameScene(engine::core::Context& context,
+        std::shared_ptr<game::factory::BlueprintManager> blueprint_manager = nullptr,
+        std::shared_ptr<game::data::SessionData> session_data = nullptr,
+        std::shared_ptr<game::data::UIConfig> ui_config = nullptr,
+        std::shared_ptr<game::data::LevelConfig> level_config = nullptr
+    );
+
     ~GameScene();
 
     void update(sf::Time delta) override;
@@ -51,8 +65,11 @@ private:
     [[nodiscard]] bool init_enemy_spawner();
     [[nodiscard]] bool init_units_portrait_ui();
 
-    // 测试函数
-    bool on_clear_all_players();
+    // 场景相关函数
+    void on_restart();
+    void on_back_to_title();
+    void on_save();
+    void on_level_clear();
 
     std::unique_ptr<engine::system::RenderSystem> render_system_;
     std::unique_ptr<engine::system::MovementSystem> movement_system_;

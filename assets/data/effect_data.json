@@ -13,8 +13,8 @@
         "height": 128,
         "size_x": 192,
         "size_y": 192,
-        "origin_x": 96,
-        "origin_y": 144,
+        "origin_x": 64,
+        "origin_y": 100,
         "animation": {"duration":50, "row":0, "frames":[0,1,2,3,4,5,6,7,8,9,10,11]}
     },
     "skill_active": {

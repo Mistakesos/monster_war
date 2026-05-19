@@ -5,6 +5,7 @@
 #include "game/factory/blueprint_manager.hpp"
 #include "engine/core/context.hpp"
 #include "engine/core/game_state.hpp"
+#include "engine/input/input_manager.hpp"
 #include "engine/ui/ui_element.hpp"
 #include "engine/ui/ui_panel.hpp"
 #include "engine/ui/ui_image.hpp"
@@ -38,8 +39,17 @@ UnitsPortraitUI::~UnitsPortraitUI() {
     context_.get_dispatcher().sink<game::defs::RemoveUIPortraitEvent>().disconnect<&UnitsPortraitUI::on_remove_ui_portrait_event>(this);
 }
 
-void UnitsPortraitUI::update(sf::Time) {
+void UnitsPortraitUI::update(sf::Time delta) {
     update_portrait_cover();
+    // 检测是否按下移动肖像面板的按键
+    auto& input_manager = context_.get_input_manager();
+    if (input_manager.is_action_held(Action::MoveLeft)) {
+        move_portrait_panel_left(delta);
+    }
+    else if (input_manager.is_action_held(Action::MoveRight)) {
+        move_portrait_panel_right(delta);
+    }
+
 }
 
 void UnitsPortraitUI::update_portrait_cover() {
@@ -105,8 +115,13 @@ void UnitsPortraitUI::create_units_portrait_ui() {
             frame_size,
             [this, name_id, &unit_data, cost]() {   // 按钮点击回调：发送单位准备事件
                 context_.get_dispatcher().enqueue(game::defs::PrepUnitEvent{name_id, unit_data.class_id_, cost}); 
+            },
+            [this, name_id]() {  // 按钮悬停进入回调：发送单位肖像悬停进入事件
+                context_.get_dispatcher().enqueue(game::defs::UIPortraitHoverEnterEvent{name_id});
+            },
+            [this]() {  // 按钮悬停离开回调：发送单位肖像悬停离开事件
+                context_.get_dispatcher().enqueue(game::defs::UIPortraitHoverLeaveEvent{});
             }
-            // TODO: 悬浮进入和悬浮离开回调函数
         ));
         frame_panel->add_child(std::make_unique<engine::ui::UIImage>(icon, sf::Vector2f(0.f, 0.f), frame_size / 2.f));
         frame_panel->add_child(std::make_unique<engine::ui::UILabel>(context_, 
@@ -150,6 +165,28 @@ void UnitsPortraitUI::arrange_units_portrait_ui() {
     // 更新panel的size
     anchor_panel_->set_size(sf::Vector2f(padding + anchor_panel_->get_children().size() * (frame_size.x + padding), 
                                     frame_size.y + 2 * padding));
+}
+
+void UnitsPortraitUI::move_portrait_panel_right(sf::Time delta) {
+    // 获取panel的位置
+    auto panel_position = anchor_panel_->get_position();
+    // 如果位置为负就向右移，最多到达0
+    panel_position.x = std::min(0.f, panel_position.x + delta.asSeconds() * 400.f);
+    anchor_panel_->set_position(panel_position);
+}
+
+void UnitsPortraitUI::move_portrait_panel_left(sf::Time delta) {
+    // 获取窗口大小
+    const auto& window_size = context_.get_game_state().get_logical_size();
+    // 获取panel的位置
+    auto panel_position = anchor_panel_->get_position();
+    const auto& panel_size = anchor_panel_->get_size();
+    // 如果面板宽度小于窗口宽度，则不移动
+    if (panel_size.x < window_size.x) return;
+
+    // 如果右端超出屏幕就向左移动，右端最多到达窗口宽度
+    panel_position.x = std::max(window_size.x - panel_size.x, panel_position.x - delta.asSeconds() * 400.f);
+    anchor_panel_->set_position(panel_position);
 }
 
 void UnitsPortraitUI::on_remove_ui_portrait_event(const game::defs::RemoveUIPortraitEvent& event) {

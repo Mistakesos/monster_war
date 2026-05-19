@@ -21,6 +21,8 @@ public:
 private:
     // 事件回调函数
     void on_enemy_arrive_home(const game::defs::EnemyArriveHomeEvent& event);
+    void on_upgrade_unit_event(const game::defs::UpgradeUnitEvent& event);
+    void on_retreat_event(const game::defs::RetreatEvent& event);
 
     entt::registry& registry_;
     entt::dispatcher& dispatcher_;

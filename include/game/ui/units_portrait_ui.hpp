@@ -41,6 +41,9 @@ private:
     void create_units_portrait_ui();        ///< @brief 创建单位肖像UI
     void arrange_units_portrait_ui();       ///< @brief 排列单位肖像UI（肖像增/减时调用）
 
+    void move_portrait_panel_right(sf::Time delta);      ///< @brief 向右移动单位肖像UI
+    void move_portrait_panel_left(sf::Time delta);       ///< @brief 向左移动单位肖像UI
+
     // 事件回调函数
     void on_remove_ui_portrait_event(const game::defs::RemoveUIPortraitEvent& event);
 
