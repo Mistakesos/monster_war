@@ -27,20 +27,19 @@ TitleScene::TitleScene(engine::core::Context& context,
     std::shared_ptr<game::data::SessionData> session_data,
     std::shared_ptr<game::data::UIConfig> ui_config, 
     std::shared_ptr<game::data::LevelConfig> level_config)
-    : engine::scene::Scene("TitleScene", context), 
-    blueprint_manager_(blueprint_manager),
-    session_data_(session_data),
-    ui_config_(ui_config), 
-    level_config_(level_config) {
-
+    : engine::scene::Scene("TitleScene", context)
+    , blueprint_manager_{blueprint_manager}
+    , session_data_{session_data}
+    , ui_config_{ui_config}
+    , level_config_{level_config} {
     if (!init_session_data())         { spdlog::error("初始化session_data_失败"); return; }
     if (!init_level_config())         { spdlog::error("初始化关卡配置失败"); return; }
     if (!init_blueprint_manager())    { spdlog::error("初始化蓝图管理器失败"); return; }
     if (!init_ui_config())            { spdlog::error("初始化UI配置失败"); return; }
     if (!load_title_level())          { spdlog::error("加载关卡失败"); return; }
-    if (!init_systems())             { spdlog::error("初始化系统失败"); return; }
+    if (!init_systems())              { spdlog::error("初始化系统失败"); return; }
     if (!init_registry_context())     { spdlog::error("初始化注册表上下文失败"); return; }
-    if (!init_ui())                  { spdlog::error("初始化UI失败"); return; }
+    if (!init_ui())                   { spdlog::error("初始化UI失败"); return; }
 
     context_.get_game_state().set_state(engine::core::State::Title);
     context_.get_time().set_time_scale(1.f);      // 重置游戏速度

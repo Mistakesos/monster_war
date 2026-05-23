@@ -78,7 +78,8 @@ void CombatResolveSystem::on_attack_event(const game::defs::AttackEvent& event) 
             game_stats.enemy_killed_count_++;       // 敌人击杀数量+1
             if ((game_stats.enemy_killed_count_ + game_stats.enemy_arrived_count_) >= game_stats.enemy_count_) {
                 spdlog::warn("敌人全部死亡");
-                // TODO: 切换场景逻辑
+                // 通关成功
+                dispatcher_.enqueue(game::defs::LevelClearDelayedEvent{});
             }
 
             // 如果敌人被阻挡，减少阻挡者的阻挡计数

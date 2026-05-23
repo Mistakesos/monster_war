@@ -13,7 +13,7 @@
         "target_fps": 60
     },
     "audio": {
-        "music_volume": 0,
+        "music_volume": 20,
         "sound_volume": 30
     },
     "keyboard_input_mappings": [

@@ -11,6 +11,8 @@
 #include "game/data/session_data.hpp"
 #include "game/factory/blueprint_manager.hpp"
 #include "game/scene/title_scene.hpp"
+#include "game/scene/level_clear_scene.hpp"
+#include "game/scene/end_scene.hpp"
 #include "engine/core/game_state.hpp"
 #include "engine/audio/audio_player.hpp"
 #include "engine/component/name_component.hpp"
@@ -58,6 +60,18 @@ void DebugUISystem::update_title(game::scene::TitleScene& title_scene) {
     // 渲染可能激活的角色信息和载入面板
     render_unit_info_ui(title_scene.show_unit_info_);      // 可以直接获取TitleScene的私有成员变量
     render_load_panel_ui(title_scene.show_load_panel_);
+}
+
+void DebugUISystem::update_level_clear(game::scene::LevelClearScene& level_clear_scene) {
+    render_level_clear_text();
+    render_level_clear_table(level_clear_scene);
+    render_level_clear_buttons(level_clear_scene);
+    render_save_panel_ui(level_clear_scene.show_save_panel_);
+}
+
+void DebugUISystem::update_end(game::scene::EndScene& end_scene) {
+    render_end_text(end_scene);
+    render_end_buttons(end_scene);
 }
 
 // ----------------------------- GameScene -----------------------------
@@ -379,6 +393,99 @@ void DebugUISystem::render_title_buttons(game::scene::TitleScene& title_scene) {
         title_scene.on_quit_click();
     }
     ImGui::SetWindowFontScale(1.f);    // 恢复默认字体大小
+    ImGui::End();
+}
+
+// ----------------------------- LevelClearScene -----------------------------
+void DebugUISystem::render_level_clear_text() {
+    if (!ImGui::Begin("通关结算文本", nullptr, ImGuiWindowFlags_NoTitleBar)) {
+        ImGui::End();
+        spdlog::error("通关结算文本窗口打开失败");
+        return;
+    }
+    ImGui::SetWindowFontScale(3.f);
+    ImGui::Text("通关成功！");
+    ImGui::SetWindowFontScale(1.f);
+    ImGui::End();
+}
+
+void DebugUISystem::render_level_clear_table(game::scene::LevelClearScene& level_clear_scene) {
+    if (!ImGui::Begin("通关结算", nullptr, ImGuiWindowFlags_NoTitleBar)) {
+        ImGui::End();
+        spdlog::error("通关结算窗口打开失败");
+        return;
+    }
+    render_unit_table();  // 支持排序的角色表格
+    ImGui::Separator();
+    // 显示部分通过统计信息
+    const auto& session_info = level_clear_scene.game_stats_;
+    const auto& session_data = level_clear_scene.session_data_;
+    ImGui::Text("关卡: %d", session_data->get_level_number());
+    ImGui::SameLine();
+    ImGui::Text("击杀数量: %d / %d", session_info.enemy_killed_count_, session_info.enemy_count_);
+    ImGui::SameLine();
+    ImGui::Text("基地血量: %d / 5", session_info.home_hp_);
+    ImGui::SameLine();
+    ImGui::Text("奖励点数: %d", session_info.enemy_killed_count_ + session_info.home_hp_ * 5);
+    ImGui::SameLine();
+    ImGui::Text("剩余点数: %d", session_data->get_point());
+    ImGui::End();
+}
+
+void DebugUISystem::render_level_clear_buttons(game::scene::LevelClearScene& level_clear_scene) {
+    if (!ImGui::Begin("通关结算按钮", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::End();
+        spdlog::error("通关结算按钮窗口打开失败");
+        return;
+    }
+    ImGui::SetWindowFontScale(1.5f);
+    if (ImGui::Button("下一关", ImVec2(150, 45))) {
+        level_clear_scene.on_next_level_click();
+    }
+    ImGui::SameLine(); ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20.f);
+    if (ImGui::Button("保存", ImVec2(150, 45))) {
+        level_clear_scene.on_save_click();
+    }
+    ImGui::SameLine(); ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20.f);
+    if (ImGui::Button("返回标题", ImVec2(150, 45))) {
+        level_clear_scene.on_back_to_title_click();
+    }
+    ImGui::SetWindowFontScale(1.f);
+    ImGui::End();
+}
+
+// ----------------------------- EndScene -----------------------------
+void DebugUISystem::render_end_text(game::scene::EndScene& end_scene) {
+    if (!ImGui::Begin("游戏结束", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::End();
+        spdlog::error("游戏结束窗口打开失败");
+        return;
+    }
+    ImGui::SetWindowFontScale(5.f);
+    if (end_scene.is_win_) {
+        ImGui::Text("恭喜你，游戏胜利!");
+    } else {
+        ImGui::Text("游戏失败，请再接再厉！");
+    }
+    ImGui::SetWindowFontScale(1.f);
+    ImGui::End();
+}
+
+void DebugUISystem::render_end_buttons(game::scene::EndScene& end_scene) {
+    if (!ImGui::Begin("游戏结束按钮", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::End();
+        spdlog::error("游戏结束按钮窗口打开失败");
+        return;
+    }
+    ImGui::SetWindowFontScale(1.5f);
+    if (ImGui::Button("返回标题", ImVec2(150, 45))) {
+        end_scene.on_back_to_title_click();
+    }
+    ImGui::SameLine(); ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20.f);
+    if (ImGui::Button("退出游戏", ImVec2(150, 45))) {
+        end_scene.on_quit_click();
+    }
+    ImGui::SetWindowFontScale(1.f);
     ImGui::End();
 }
 

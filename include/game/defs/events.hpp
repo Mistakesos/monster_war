@@ -1,6 +1,7 @@
 #pragma once
 #include <entt/entity/entity.hpp>
 #include <SFML/System/Vector2.hpp>
+#include <SFML/System/Time.hpp>
 
 namespace game::defs {
 
@@ -99,6 +100,12 @@ struct RetreatEvent {
 struct RestartEvent {};
 struct BackToTitleEvent {};
 struct SaveEvent {};
-struct LevelClearEvent {};
+struct LevelClearEvent {};          ///< @brief 关卡通关事件(立刻切换场景)
+struct LevelClearDelayedEvent {     ///< @brief 关卡通关事件(延迟切换场景)
+    sf::Time delay_time_{sf::seconds(3.f)};
+};
+struct GameEndEvent {
+    bool is_win_{false};            ///< @brief 是否获胜
+};
 
 }   // namespace game::defs

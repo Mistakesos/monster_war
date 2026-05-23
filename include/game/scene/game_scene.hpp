@@ -6,6 +6,7 @@
 #include "game/data/session_data.hpp"
 #include "game/data/game_stats.hpp"
 #include "game/data/level_config.hpp"
+#include "game/defs/events.hpp"
 #include "game/data/ui_config.hpp"
 #include <memory>
 
@@ -70,6 +71,7 @@ private:
     void on_back_to_title();
     void on_save();
     void on_level_clear();
+    void on_game_end_event(const game::defs::GameEndEvent& event);
 
     std::unique_ptr<engine::system::RenderSystem> render_system_;
     std::unique_ptr<engine::system::MovementSystem> movement_system_;

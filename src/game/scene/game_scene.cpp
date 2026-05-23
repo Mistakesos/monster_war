@@ -1,5 +1,7 @@
 #include "game/scene/game_scene.hpp"
 #include "game/scene/title_scene.hpp"
+#include "game/scene/level_clear_scene.hpp"
+#include "game/scene/end_scene.hpp"
 #include "engine/audio/audio_player.hpp"
 #include "engine/core/game_state.hpp"
 #include "engine/render/camera.hpp"
@@ -143,11 +145,13 @@ bool GameScene::init_event_connections() {
     dispatcher.sink<game::defs::RestartEvent>().connect<&GameScene::on_restart>(this);
     dispatcher.sink<game::defs::BackToTitleEvent>().connect<&GameScene::on_back_to_title>(this);
     dispatcher.sink<game::defs::SaveEvent>().connect<&GameScene::on_save>(this);
+    dispatcher.sink<game::defs::LevelClearEvent>().connect<&GameScene::on_level_clear>(this);
+    dispatcher.sink<game::defs::GameEndEvent>().connect<&GameScene::on_game_end_event>(this);
     return true;
 }
 
 bool GameScene::init_input_connections() {
-    // auto& input_manager = context_.get_input_manager();
+    // 未来可添加输入控制，记得在析构函数中断开
     return true;
 }
 
@@ -261,8 +265,30 @@ void GameScene::on_save() {
 }
 
 void GameScene::on_level_clear() {
-    spdlog::info("关卡通关");
-    // TODO: 关卡通关
+    spdlog::info("关卡通关成功");
+    // 奖励点数 = 击杀数 + 基地血量 * 5
+    const auto point = game_stats_.enemy_killed_count_ + game_stats_.home_hp_ * 5;
+    session_data_->set_level_clear(true);
+    session_data_->add_point(point);
+
+    // 如果当前关卡是最后一关，则进入结束场景；否则进入通关结算场景
+    if (level_config_->is_final_level(level_number_)) {
+        request_push_scene(std::make_unique<game::scene::EndScene>(context_, true));
+    } else {
+        request_push_scene(std::make_unique<game::scene::LevelClearScene>(
+        context_,
+        blueprint_manager_,
+        ui_config_,
+        level_config_,
+        session_data_,
+        game_stats_
+        ));
+    }
+}
+
+void GameScene::on_game_end_event(const game::defs::GameEndEvent& event) {
+    spdlog::info("游戏结束");
+    request_push_scene(std::make_unique<game::scene::EndScene>(context_, event.is_win_));
 }
 
 void GameScene::update(sf::Time delta) {
@@ -313,6 +339,9 @@ void GameScene::render() {
 
     Scene::render();
 
-    debug_ui_system_->update();     // 调试UI的显示优先级最高，最后渲染
+    // 当场景栈中只有GameScene时才渲染调试UI, 不然上层有其它场景时会冲突
+    if (context_.get_game_state().is_playing() || context_.get_game_state().is_paused()) {
+        debug_ui_system_->update();     // 调试UI的显示优先级最高，最后渲染
+    }
 }
 } // namespace game::scene

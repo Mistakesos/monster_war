@@ -23,9 +23,13 @@ private:
     void on_enemy_arrive_home(const game::defs::EnemyArriveHomeEvent& event);
     void on_upgrade_unit_event(const game::defs::UpgradeUnitEvent& event);
     void on_retreat_event(const game::defs::RetreatEvent& event);
+    void on_level_clear_delayed_event(const game::defs::LevelClearDelayedEvent& event);
 
     entt::registry& registry_;
     entt::dispatcher& dispatcher_;
+
+    bool is_level_clear_{false};                    ///< @brief 是否关卡通关
+    sf::Time level_clear_timer_{sf::Time::Zero};    ///< @brief 关卡通关计时器(实现延迟切换场景)
 };
 
 }

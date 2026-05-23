@@ -1,11 +1,11 @@
 {
     "level": 1,
-    "level_clear": false,
-    "point": 0,
+    "level_clear": true,
+    "point": 4,
     "unit": {
         "伊格纳茨": {
             "class": "lancer",
-            "level": 2,
+            "level": 3,
             "rarity": 2
         },
         "伊索尔德": {
@@ -15,7 +15,7 @@
         },
         "凯伦": {
             "class": "archer",
-            "level": 2,
+            "level": 3,
             "rarity": 1
         },
         "加尔隆": {

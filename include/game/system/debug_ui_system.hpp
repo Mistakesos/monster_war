@@ -9,6 +9,8 @@ namespace engine::core {
 
 namespace game::scene {
     class TitleScene;
+    class LevelClearScene;
+    class EndScene;
 } // namespace game::scene
 
 namespace game::system {
@@ -26,6 +28,8 @@ public:
 
     void update();                                           ///<@brief 针对GameScene的更新
     void update_title(game::scene::TitleScene& title_scene); ///<@brief 针对TitleScene的更新 (直接传入场景引用，提升便捷但增加耦合)
+    void update_level_clear(game::scene::LevelClearScene& level_clear_scene);   ///<@brief 针对LevelClearScene的更新
+    void update_end(game::scene::EndScene& end_scene);                          ///<@brief 针对EndScene的更新
 
 private:
     // 封装每个UI显示模块
@@ -40,6 +44,15 @@ private:
     // --- TitleScene ---
     void render_title_logo();
     void render_title_buttons(game::scene::TitleScene& title_scene);
+
+    // --- LevelClearScene ---
+    void render_level_clear_text();
+    void render_level_clear_table(game::scene::LevelClearScene& level_clear_scene);
+    void render_level_clear_buttons(game::scene::LevelClearScene& level_clear_scene);
+
+    // --- EndScene ---
+    void render_end_text(game::scene::EndScene& end_scene);
+    void render_end_buttons(game::scene::EndScene& end_scene);
 
     // --- Shared ---
     void render_unit_info_ui(bool& show_unit_info);
