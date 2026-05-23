@@ -10,13 +10,16 @@
 #include "game/data/level_data.hpp"
 #include "game/data/session_data.hpp"
 #include "game/factory/blueprint_manager.hpp"
+#include "game/scene/title_scene.hpp"
 #include "engine/core/game_state.hpp"
 #include "engine/audio/audio_player.hpp"
 #include "engine/component/name_component.hpp"
 #include "engine/core/context.hpp"
 #include "engine/core/time.hpp"
+#include "engine/resource/resource_manager.hpp"
 #include "engine/utils/math.hpp"
 #include <imgui.h>
+#include <imgui-SFML.h>
 #include <entt/entity/registry.hpp>
 #include <entt/signal/dispatcher.hpp>
 #include <entt/core/hashed_string.hpp>
@@ -29,7 +32,7 @@ namespace game::system {
 DebugUISystem::DebugUISystem(entt::registry& registry, engine::core::Context& context)
     : registry_{registry}
     , context_{context} {
-        context_.get_dispatcher().sink<game::defs::UIPortraitHoverEnterEvent>().connect<&DebugUISystem::on_ui_portrait_hover_enter_event>(this);
+    context_.get_dispatcher().sink<game::defs::UIPortraitHoverEnterEvent>().connect<&DebugUISystem::on_ui_portrait_hover_enter_event>(this);
     context_.get_dispatcher().sink<game::defs::UIPortraitHoverLeaveEvent>().connect<&DebugUISystem::on_ui_portrait_hover_leave_event>(this);
 }
 
@@ -44,8 +47,20 @@ void DebugUISystem::update() {
     render_info_ui();
     render_setting_ui();
     render_debug_ui();
+
+    // 渲染可能激活的保存面板
+    auto& show_save_panel = registry_.ctx().get<bool&>("show_save_panel"_hs);
+    render_save_panel_ui(show_save_panel);
+}
+void DebugUISystem::update_title(game::scene::TitleScene& title_scene) {
+    render_title_logo();
+    render_title_buttons(title_scene);
+    // 渲染可能激活的角色信息和载入面板
+    render_unit_info_ui(title_scene.show_unit_info_);      // 可以直接获取TitleScene的私有成员变量
+    render_load_panel_ui(title_scene.show_load_panel_);
 }
 
+// ----------------------------- GameScene -----------------------------
 void DebugUISystem::render_hovered_portrait() {
     // 确定鼠标悬浮的单位肖像存在
     if (hovered_portrait_ == entt::null) return;
@@ -324,6 +339,339 @@ void DebugUISystem::render_debug_ui() {
     }
     // TODO: 未来可按需添加其他调试工具
     ImGui::End();
+}
+
+// ----------------------------- TitleScene -----------------------------
+void DebugUISystem::render_title_logo() {
+    if (!ImGui::Begin("TitleLogo", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground)) {
+        ImGui::End();
+        spdlog::error("TitleLogo窗口打开失败");
+        return;
+    }
+    // 获取LOGO图片信息
+    auto& resource_manager = context_.get_resource_manager();
+    auto logo_texture = resource_manager.get_texture("assets/textures/UI/title.png"_hs);
+    ImGui::Image(*logo_texture);
+    ImGui::End();
+}
+
+void DebugUISystem::render_title_buttons(game::scene::TitleScene& title_scene) {
+    if (!ImGui::Begin("TitleUI", nullptr, ImGuiWindowFlags_NoTitleBar)) {
+        ImGui::End();
+        spdlog::error("TitleUI窗口打开失败");
+        return;
+    }
+    // 设置按钮字体更大
+    ImGui::SetWindowFontScale(2.f);
+    if (ImGui::Button("开始游戏", ImVec2(200, 60))) {
+        title_scene.on_start_game_click();     // 直接调用TitleScene的私有函数，不需要通过dispatcher发信号
+    }
+    ImGui::SameLine(); ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20.f);
+    if (ImGui::Button("确认角色", ImVec2(200, 60))) {
+        title_scene.on_confirm_role_click();
+    }
+    ImGui::SameLine(); ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20.f);
+    if (ImGui::Button("载入游戏", ImVec2(200, 60))) {
+        title_scene.on_load_game_click();
+    }
+    ImGui::SameLine(); ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 20.f);
+    if (ImGui::Button("退出游戏", ImVec2(200, 60))) {
+        title_scene.on_quit_click();
+    }
+    ImGui::SetWindowFontScale(1.f);    // 恢复默认字体大小
+    ImGui::End();
+}
+
+// ----------------------------- Shared -----------------------------
+void DebugUISystem::render_unit_info_ui(bool& show_unit_info) {
+    if (!show_unit_info) return;
+    // 关闭窗口时，第二个参数(show_unit_info)会被设置为false，因此需要传入引用
+    if (!ImGui::Begin("角色信息", &show_unit_info, ImGuiWindowFlags_NoCollapse)) {
+        ImGui::End();
+        spdlog::error("UnitInfoUI窗口打开失败");
+        return;
+    }
+    render_unit_table();
+    ImGui::Separator();
+    const auto session_data = registry_.ctx().get<std::shared_ptr<game::data::SessionData>>();
+    ImGui::Text("剩余点数: %d", session_data->get_point());
+    ImGui::End();
+}
+
+void DebugUISystem::render_load_panel_ui(bool& show_load_panel) {
+    if (!show_load_panel) return;
+    if (!ImGui::Begin("读档选择", &show_load_panel, ImGuiWindowFlags_NoCollapse)) {
+        ImGui::End();
+        spdlog::error("读档选择窗口打开失败");
+        return;
+    }
+    const auto& session_data = registry_.ctx().get<std::shared_ptr<game::data::SessionData>>();
+    if (ImGui::Button("SLOT 1")) {
+        session_data->load_from_file("assets/save/SLOT_1.json");
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("SLOT 2")) {
+        session_data->load_from_file("assets/save/SLOT_2.json");
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("SLOT 3")) {
+        session_data->load_from_file("assets/save/SLOT_3.json");
+    }
+    // 如果已经通关了，则提示将进入下一关，否则显示“当前关卡”
+    if (session_data->is_level_clear()) {
+        ImGui::Text("下一关: %d", session_data->get_level_number() + 1);
+    } else {
+        ImGui::Text("当前关卡: %d", session_data->get_level_number());
+    }
+    ImGui::End();
+}
+
+void DebugUISystem::render_save_panel_ui(bool& show_save_panel) {
+    if (!show_save_panel) return;
+    if (!ImGui::Begin("存档选择", &show_save_panel, ImGuiWindowFlags_NoCollapse)) {
+        ImGui::End();
+        spdlog::error("存档选择窗口打开失败");
+        return;
+    }
+    const auto& session_data = registry_.ctx().get<std::shared_ptr<game::data::SessionData>>();
+    if (ImGui::Button("SLOT 1")) {        
+        session_data->save_to_file("assets/save/SLOT_1.json");
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("SLOT 2")) {
+        session_data->save_to_file("assets/save/SLOT_2.json");
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("SLOT 3")) {
+        session_data->save_to_file("assets/save/SLOT_3.json");
+    }
+    // 根据是否已经通关，切换显示提示信息
+    if (session_data->is_level_clear()) {
+        ImGui::Text("下一关: %d", session_data->get_level_number() + 1);
+    } else {
+        ImGui::Text("当前关卡: %d", session_data->get_level_number());
+    }
+    ImGui::End();
+}
+
+void DebugUISystem::render_unit_table() {
+    // 显示表格，需指定列数(14)，标志位使用ImGuiTableFlags_Sortable，可以让表格支持排序
+    if (!ImGui::BeginTable("角色信息", 14, ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_Sortable)) {
+        ImGui::End();
+        spdlog::error("角色信息表格打开失败");
+        return;
+    }
+    // 定义标题列
+    ImGui::TableSetupColumn("姓名");
+    ImGui::TableSetupColumn("职业");
+    ImGui::TableSetupColumn("类型");
+    ImGui::TableSetupColumn("等级");
+    ImGui::TableSetupColumn("稀有度");
+    ImGui::TableSetupColumn("COST");
+    ImGui::TableSetupColumn("生命值");
+    ImGui::TableSetupColumn("攻击力");
+    ImGui::TableSetupColumn("防御力");
+    ImGui::TableSetupColumn("攻击范围");
+    ImGui::TableSetupColumn("攻击间隔");
+    ImGui::TableSetupColumn("阻挡数量");
+    ImGui::TableSetupColumn("技能");
+    ImGui::TableSetupColumn("升级");
+    // 渲染标题行
+    ImGui::TableHeadersRow();
+    // 获取数据
+    const auto session_data = registry_.ctx().get<std::shared_ptr<game::data::SessionData>>();
+    auto& unit_data_list = session_data->get_unit_data_list();
+    const auto blueprint_manager = registry_.ctx().get<std::shared_ptr<game::factory::BlueprintManager>>();
+    const auto ui_config = registry_.ctx().get<std::shared_ptr<game::data::UIConfig>>();
+
+    // --- 点击标题列，就按照该列排序 ---
+    // 获取排序规格参数 (当sort_specs->SpecsDirty为true时，表示点击了某一列标题，需要重新排序)
+    if (ImGuiTableSortSpecs* sort_specs = ImGui::TableGetSortSpecs()) {
+        if (sort_specs->SpecsDirty && !unit_data_list.empty()) {
+            // 获取第一个（也是唯一的）排序规格参数 (多列排序会有更多规格参数)
+            const ImGuiTableColumnSortSpecs& spec = sort_specs->Specs[0];
+            const int col = spec.ColumnIndex;       // 获取列的索引，对应鼠标点击的列
+            const bool ascending = (spec.SortDirection == ImGuiSortDirection_Ascending);
+            
+            // 创建字符串比较函数 (如果左<右，返回-1；如果左>右，返回1；如果左==右，返回0)
+            const auto compareStrings = [](const std::string& a, const std::string& b) {
+                return (a < b) ? -1 : (a > b ? 1 : 0);
+            };
+            
+            // 执行排序
+            std::stable_sort(unit_data_list.begin(), unit_data_list.end(), 
+                             [&](const game::data::UnitData* lhs, const game::data::UnitData* rhs) {
+                // 获取职业蓝图（用于获取属性）
+                const auto& pcb_l = blueprint_manager->get_player_class_blueprint(lhs->class_id_);
+                const auto& pcb_r = blueprint_manager->get_player_class_blueprint(rhs->class_id_);
+                
+                // delta用于记录比较结果（-1表示小于，0表示等于，1表示大于）
+                int delta = 0;
+
+                switch (col) {
+                    case 0: {   // 姓名
+                        delta = compareStrings(lhs->name_, rhs->name_);
+                        break;
+                    }
+                    case 1: {   // 职业
+                        delta = compareStrings(lhs->class_, rhs->class_);
+                        break;
+                    }
+                    case 2: {   // 类型（近战、远程、混合）
+                        const int type_l = static_cast<int>(pcb_l.player_.type_);
+                        const int type_r = static_cast<int>(pcb_r.player_.type_);
+                        delta = (type_l < type_r) ? -1 : (type_l > type_r ? 1 : 0);
+                        break;
+                    }
+                    case 3: {   // 等级
+                        delta = (lhs->level_ < rhs->level_) ? -1 : (lhs->level_ > rhs->level_ ? 1 : 0);
+                        break;
+                    }
+                    case 4: {   // 稀有度
+                        delta = (lhs->rarity_ < rhs->rarity_) ? -1 : (lhs->rarity_ > rhs->rarity_ ? 1 : 0);
+                        break;
+                    }
+                    case 5: {   // COST
+                        // 要考虑相等的情况，因此使用int排序而非float
+                        const int cost_l = static_cast<int>(std::round(engine::utils::stat_modify(pcb_l.player_.cost_, 1, lhs->rarity_)));
+                        const int cost_r = static_cast<int>(std::round(engine::utils::stat_modify(pcb_r.player_.cost_, 1, rhs->rarity_)));
+                        delta = (cost_l < cost_r) ? -1 : (cost_l > cost_r ? 1 : 0);
+                        break;
+                    }
+                    case 6: {   // 生命值
+                        const int hp_l = static_cast<int>(std::round(engine::utils::stat_modify(pcb_l.stats_.hp_, lhs->level_, lhs->rarity_)));
+                        const int hp_r = static_cast<int>(std::round(engine::utils::stat_modify(pcb_r.stats_.hp_, rhs->level_, rhs->rarity_)));
+                        delta = (hp_l < hp_r) ? -1 : (hp_l > hp_r ? 1 : 0);
+                        break;
+                    }
+                    case 7: {   // 攻击力
+                        const int atk_l = static_cast<int>(std::round(engine::utils::stat_modify(pcb_l.stats_.atk_, lhs->level_, lhs->rarity_)));
+                        const int atk_r = static_cast<int>(std::round(engine::utils::stat_modify(pcb_r.stats_.atk_, rhs->level_, rhs->rarity_)));
+                        delta = (atk_l < atk_r) ? -1 : (atk_l > atk_r ? 1 : 0);
+                        break;
+                    }
+                    case 8: {   // 防御力
+                        const int def_l = static_cast<int>(std::round(engine::utils::stat_modify(pcb_l.stats_.def_, lhs->level_, lhs->rarity_)));
+                        const int def_r = static_cast<int>(std::round(engine::utils::stat_modify(pcb_r.stats_.def_, rhs->level_, rhs->rarity_)));
+                        delta = (def_l < def_r) ? -1 : (def_l > def_r ? 1 : 0);
+                        break;
+                    }
+                    case 9: {   // 攻击范围
+                        const int range_l = static_cast<int>(std::round(pcb_l.stats_.range_));
+                        const int range_r = static_cast<int>(std::round(pcb_r.stats_.range_));
+                        delta = (range_l < range_r) ? -1 : (range_l > range_r ? 1 : 0);
+                        break;
+                    }
+                    case 10: {  // 攻击间隔
+                        const float ai_l = pcb_l.stats_.atk_interval_.asSeconds();
+                        const float ai_r = pcb_r.stats_.atk_interval_.asSeconds();
+                        delta = (ai_l < ai_r) ? -1 : (ai_l > ai_r ? 1 : 0);
+                        break;
+                    }
+                    case 11: {  // 阻挡数量
+                        delta = (pcb_l.player_.block_ < pcb_r.player_.block_) ? -1 : (pcb_l.player_.block_ > pcb_r.player_.block_ ? 1 : 0);
+                        break;
+                    }
+                    case 12: {  // 技能
+                        const auto& sk_l = blueprint_manager->get_skill_blueprint(pcb_l.player_.skill_id_);
+                        const auto& sk_r = blueprint_manager->get_skill_blueprint(pcb_r.player_.skill_id_);
+                        delta = compareStrings(sk_l.name_, sk_r.name_);
+                        break;
+                    }
+                    case 13: {  // 升级按钮 (和COST排序一致)
+                        const int cost_l = static_cast<int>(std::round(engine::utils::stat_modify(pcb_l.player_.cost_, 1, lhs->rarity_)));
+                        const int cost_r = static_cast<int>(std::round(engine::utils::stat_modify(pcb_r.player_.cost_, 1, rhs->rarity_)));
+                        delta = (cost_l < cost_r) ? -1 : (cost_l > cost_r ? 1 : 0);
+                        break;
+                    }
+                    default: break;
+                }
+
+                // 根据升序还是降序返回比较结果
+                return ascending ? (delta < 0) : (delta > 0);
+            });
+            
+            // 完成排序后，将SpecsDirty设置为false，下轮更新会跳过排序操作（即脏标识模式）
+            sort_specs->SpecsDirty = false;
+        }
+    }
+
+    // 渲染数据行
+    for (const auto& unit : unit_data_list) {
+        // 获取并计算属性数据信息
+        const auto& player_class_blueprint = blueprint_manager->get_player_class_blueprint(unit->class_id_);
+        const auto& skill_blueprint = blueprint_manager->get_skill_blueprint(player_class_blueprint.player_.skill_id_);
+        const auto& stats = player_class_blueprint.stats_;
+        const auto hp = engine::utils::stat_modify(stats.hp_, unit->level_, unit->rarity_);
+        const auto atk = engine::utils::stat_modify(stats.atk_, unit->level_, unit->rarity_);
+        const auto def = engine::utils::stat_modify(stats.def_, unit->level_, unit->rarity_);
+        const auto cost = engine::utils::stat_modify(player_class_blueprint.player_.cost_, 1, unit->rarity_);
+        std::string type = player_class_blueprint.player_.type_ == game::defs::PlayerType::Melee ? "近战" : 
+            player_class_blueprint.player_.type_ == game::defs::PlayerType::Ranged ? "远程" : 
+            player_class_blueprint.player_.type_ == game::defs::PlayerType::Mixed ? "混合" : "未知";
+
+        // 获取头像信息
+        const auto& portrait_sprite = ui_config->get_portrait(unit->name_id_);
+
+        // 设置显示尺寸
+        constexpr sf::Vector2f DISPLAY_SIZE = sf::Vector2f(128.f, 128.f);
+
+        // 新建一行
+        ImGui::TableNextRow();
+        // 每一行依次填充对应列的信息
+        ImGui::TableNextColumn();       // 第一列：姓名
+        ImGui::Text("%s", unit->name_.c_str());
+        // 如果鼠标悬浮在该UI组件上，显示复杂信息（支持各种UI组件及其组合，例如下面的Tooltip组件）
+        if (ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip();
+            // sf::Sprite 已通过 setTextureRect 设置了裁剪区域，直接显示即可
+            ImGui::Image(portrait_sprite, ImVec2(DISPLAY_SIZE.x, DISPLAY_SIZE.y));
+            ImGui::EndTooltip();
+        }
+        ImGui::TableNextColumn();       // 第二列：职业
+        ImGui::Text("%s", player_class_blueprint.display_info_.name_.c_str());
+        // 如果鼠标悬浮在该UI组件上，显示描述信息（只支持文本）
+        ImGui::SetItemTooltip("%s", player_class_blueprint.display_info_.description_.c_str());
+        ImGui::TableNextColumn();       // 第三列：类型
+        ImGui::Text("%s", type.c_str());
+        ImGui::TableNextColumn();       // 第四列：等级
+        ImGui::Text("%d", unit->level_);
+        ImGui::TableNextColumn();       // 第五列：稀有度
+        ImGui::Text("%d", unit->rarity_);
+        ImGui::TableNextColumn();       // 第六列：COST
+        ImGui::Text("%d", static_cast<int>(std::round(cost)));
+        ImGui::TableNextColumn();       // 第七列：生命值
+        ImGui::Text("%d", static_cast<int>(std::round(hp)));
+        ImGui::TableNextColumn();        // 第八列：攻击力
+        ImGui::Text("%d", static_cast<int>(std::round(atk)));
+        ImGui::TableNextColumn();        // 第九列：防御力
+        ImGui::Text("%d", static_cast<int>(std::round(def)));
+        ImGui::TableNextColumn();        // 第十列：攻击范围
+        ImGui::Text("%d", static_cast<int>(std::round(player_class_blueprint.stats_.range_)));
+        ImGui::TableNextColumn();        // 第十一列：攻击间隔
+        ImGui::Text("%.2f", player_class_blueprint.stats_.atk_interval_.asSeconds());
+        ImGui::TableNextColumn();        // 第十二列：阻挡数量
+        ImGui::Text("%d", player_class_blueprint.player_.block_);
+        ImGui::TableNextColumn();        // 第十三列：技能
+        ImGui::Text("%s", skill_blueprint.name_.c_str());
+        ImGui::SetItemTooltip("%s", skill_blueprint.description_.c_str());
+        ImGui::TableNextColumn();        // 第十四列：升级按钮
+
+        // 使用 name_ 作为下一个UI组件(即Button)的 ID，确保唯一性，否则同名Button会冲突
+        ImGui::PushID(unit->name_.c_str());
+            // 根据积分点数，判断是否可以升级，并决定升级按钮是否可用
+        bool can_upgrade = session_data->get_point() >= static_cast<int>(std::round(cost));
+        ImGui::BeginDisabled(!can_upgrade);
+        std::string button_text = "- " + std::to_string(static_cast<int>(std::round(cost)));
+        if (ImGui::Button(button_text.c_str())) {   // 如果没有PushID，默认会以Button中显示参数作为ID，那会出现重复ID
+            session_data->add_point(-static_cast<int>(std::round(cost)));
+            unit->level_ += 1;
+        }
+        ImGui::EndDisabled();
+        ImGui::PopID();     // 与前面的PushID对应使用，用于结束ID范围
+        ImGui::SetItemTooltip("升级耗费的点数：%d", static_cast<int>(std::round(cost)));
+    }
+    ImGui::EndTable();
 }
 
 // 事件回调函数

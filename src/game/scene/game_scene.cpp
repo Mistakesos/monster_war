@@ -1,4 +1,6 @@
 #include "game/scene/game_scene.hpp"
+#include "game/scene/title_scene.hpp"
+#include "engine/audio/audio_player.hpp"
 #include "engine/core/game_state.hpp"
 #include "engine/render/camera.hpp"
 
@@ -70,7 +72,7 @@ GameScene::GameScene(engine::core::Context& context,
     if (!init_units_portrait_ui())      { spdlog::error("初始化单位肖像UI失败"); return; }
 
     context_.get_game_state().set_state(engine::core::State::Playing);
-
+    context_.get_audio_player().play_music("battle_bgm"_hs);
     spdlog::info("GameScene 构造完成");
 }
 
@@ -180,6 +182,7 @@ bool GameScene::init_registry_context() {
     registry_.ctx().emplace<int&>(level_number_);
     registry_.ctx().emplace_as<entt::entity&>("selected_unit"_hs, selected_unit_);
     registry_.ctx().emplace_as<entt::entity&>("hovered_unit"_hs, hovered_unit_);
+    registry_.ctx().emplace_as<bool&>("show_save_panel"_hs, show_save_panel_);
 
     spdlog::info("registry_ 上下文初始化完成");
     return true;
@@ -248,12 +251,13 @@ void GameScene::on_restart() {
 
 void GameScene::on_back_to_title() {
     spdlog::info("返回标题");
-    // TODO: 返回标题
+    request_replace_scene(std::make_unique<game::scene::TitleScene>(context_));
 }
 
 void GameScene::on_save() {
     spdlog::info("保存");
-    // TODO: 保存
+    show_save_panel_ = !show_save_panel_;
+    /* 用ImGui快速实现逻辑，未来再完善游戏内UI */
 }
 
 void GameScene::on_level_clear() {

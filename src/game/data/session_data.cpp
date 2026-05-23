@@ -43,6 +43,9 @@ bool SessionData::load_default_data(std::string_view path) {
         spdlog::error("加载Session data失败: {}", e.what());
         return false;
     }
+
+    // map数据加载完毕后，再将角色数据指针插入到unit_data_list_中
+    map_unit_data_list();
     return true;
 }
 
@@ -85,16 +88,32 @@ bool SessionData::save_to_file(std::string_view path) {
     return true;
 }
 
+void SessionData::map_unit_data_list() {
+    unit_data_list_.clear();
+    unit_data_list_.reserve(unit_map_.size());
+    for (auto& [id, data] : unit_map_) {
+        unit_data_list_.push_back(&data);
+    }
+}
+
 void SessionData::add_unit(std::string_view name, std::string_view class_str, int level, int rarity) {
     entt::id_type name_id = entt::hashed_string(name.data());
     entt::id_type class_id = entt::hashed_string(class_str.data());
     // 创建角色数据，并插入到unit_map_中
     unit_map_.emplace(name_id, 
                       UnitData{name_id, class_id, std::string(name), std::string(class_str), level, rarity});
+    // 将角色数据指针插入到unit_data_list_中
+    unit_data_list_.push_back(&unit_map_[name_id]);
 }
 
 void SessionData::remove_unit(entt::id_type name_id) {
     if (auto it = unit_map_.find(name_id); it != unit_map_.end()) {
+        // 先从unit_data_list_中删除该角色数据指针
+        unit_data_list_.erase(std::remove(unit_data_list_.begin(), 
+                                          unit_data_list_.end(), 
+                                          &unit_map_[name_id]), 
+                                          unit_data_list_.end());
+        // 再从unit_map_中删除该角色数据
         unit_map_.erase(it);
     } else {
         spdlog::error("未找到该角色: {}", name_id);
@@ -119,11 +138,13 @@ void SessionData::add_unit_rarity(entt::id_type name_id, int add_rarity) {
 
 void SessionData::clear_units() {
     unit_map_.clear();
+    unit_data_list_.clear();
 }
 
 void SessionData::clear() {
     level_number_ = 1;
     unit_map_.clear();
+    unit_data_list_.clear();
 }
 
 }    // namespace game::data

@@ -7,6 +7,10 @@ namespace engine::core {
     class Context;
 } // namespace engine::core 
 
+namespace game::scene {
+    class TitleScene;
+} // namespace game::scene
+
 namespace game::system {
 
 /**
@@ -20,16 +24,28 @@ public:
     DebugUISystem(entt::registry& registry, engine::core::Context& context);
     ~DebugUISystem();
 
-    void update();
+    void update();                                           ///<@brief 针对GameScene的更新
+    void update_title(game::scene::TitleScene& title_scene); ///<@brief 针对TitleScene的更新 (直接传入场景引用，提升便捷但增加耦合)
 
 private:
     // 封装每个UI显示模块
+    // --- GameScene ---
     void render_hovered_portrait();
     void render_hovered_unit();
     void render_selected_unit();
     void render_info_ui();
     void render_setting_ui();
     void render_debug_ui();
+
+    // --- TitleScene ---
+    void render_title_logo();
+    void render_title_buttons(game::scene::TitleScene& title_scene);
+
+    // --- Shared ---
+    void render_unit_info_ui(bool& show_unit_info);
+    void render_save_panel_ui(bool& show_save_panel);
+    void render_load_panel_ui(bool& show_load_panel);
+    void render_unit_table();
 
     // 事件回调函数
     void on_ui_portrait_hover_enter_event(const game::defs::UIPortraitHoverEnterEvent& event);
